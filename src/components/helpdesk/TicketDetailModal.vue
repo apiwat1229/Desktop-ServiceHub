@@ -742,7 +742,7 @@ const exportJobOrderPDF = async () => {
 <template>
   <Dialog v-model:open="isOpen">
     <DialogContent
-      class="sm:max-w-[850px] w-full max-h-[90vh] p-0 gap-0 overflow-hidden bg-white shadow-xl border flex flex-col"
+      class="sm:max-w-[720px] w-full max-h-[90vh] p-0 gap-0 overflow-hidden bg-white shadow-xl border flex flex-col"
     >
       <DialogDescription class="sr-only">
         Details for ticket {{ localTicket?.ticketNo }}
@@ -1156,7 +1156,7 @@ const exportJobOrderPDF = async () => {
         </div>
 
         <!-- Sidebar (Fixed Width) -->
-        <div class="w-full md:w-[280px] bg-muted/5 flex flex-col">
+        <div class="w-full md:w-[240px] bg-muted/5 flex flex-col">
           <!-- Replaced ScrollArea with standard div for scrolling if needed -->
           <div class="flex-1 overflow-y-auto">
             <div class="p-5 space-y-6">
