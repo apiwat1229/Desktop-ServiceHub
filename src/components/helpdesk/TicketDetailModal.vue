@@ -1,14 +1,14 @@
 ```
 <script setup lang="ts">
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -17,11 +17,11 @@ import DatePicker from '@/components/ui/date-picker.vue';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import Time24hPicker from '@/components/ui/time-picker/Time24hPicker.vue';
@@ -36,18 +36,18 @@ import { format, formatDistanceToNowStrict, intervalToDuration } from 'date-fns'
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
-  AlertCircle,
-  Check,
-  Clock,
-  FileText,
-  History,
-  MapPin,
-  Monitor,
-  Pencil,
-  Printer,
-  Save,
-  Star,
-  Trash2,
+    AlertCircle,
+    Check,
+    Clock,
+    FileText,
+    History,
+    MapPin,
+    Monitor,
+    Pencil,
+    Printer,
+    Save,
+    Star,
+    Trash2,
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
@@ -742,7 +742,7 @@ const exportJobOrderPDF = async () => {
 <template>
   <Dialog v-model:open="isOpen">
     <DialogContent
-      class="sm:max-w-[720px] w-full max-h-[90vh] p-0 gap-0 overflow-hidden bg-white shadow-xl border flex flex-col"
+      class="max-w-[720px] w-full max-h-[90vh] p-0 gap-0 overflow-hidden bg-white shadow-xl border flex flex-col"
     >
       <DialogDescription class="sr-only">
         Details for ticket {{ localTicket?.ticketNo }}
