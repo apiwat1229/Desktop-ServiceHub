@@ -1,0 +1,247 @@
+<script setup lang="ts" generic="TData, TValue">
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  type ColumnDef,
+  FlexRender,
+  type RowSelectionState,
+  type SortingState,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useVueTable,
+} from '@tanstack/vue-table';
+import { Trash2 } from 'lucide-vue-next';
+import { h, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const props = withDefaults(
+  defineProps<{
+    columns: ColumnDef<TData, TValue>[];
+    data: TData[];
+    searchKey?: string;
+    enableSelection?: boolean;
+    initialPageSize?: number;
+    autoResetPageIndex?: boolean;
+  }>(),
+  {
+    initialPageSize: 5,
+    autoResetPageIndex: true,
+  }
+);
+
+const emit = defineEmits<{
+  deleteSelected: [selectedRows: TData[]];
+  rowClick: [row: TData];
+}>();
+
+const sorting = ref<SortingState>([]);
+const rowSelection = ref<RowSelectionState>({});
+
+// Add select all column if selection is enabled
+const columnsWithSelection = props.enableSelection
+  ? [
+      {
+        id: 'select',
+        header: ({ table }: any) =>
+          h(Checkbox, {
+            checked: table.getIsAllPageRowsSelected(),
+            'onUpdate:checked': (value: boolean) => table.toggleAllPageRowsSelected(!!value),
+            ariaLabel: 'Select all',
+          }),
+        cell: ({ row }: any) =>
+          h(Checkbox, {
+            checked: row.getIsSelected(),
+            'onUpdate:checked': (value: boolean) => row.toggleSelected(!!value),
+            ariaLabel: 'Select row',
+          }),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      ...props.columns,
+    ]
+  : props.columns;
+
+const table = useVueTable({
+  get data() {
+    return props.data;
+  },
+  get columns() {
+    return columnsWithSelection as any;
+  },
+  getCoreRowModel: getCoreRowModel(),
+  getPaginationRowModel: getPaginationRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  initialState: {
+    pagination: {
+      pageSize: props.initialPageSize,
+    },
+  },
+  state: {
+    get sorting() {
+      return sorting.value;
+    },
+    get rowSelection() {
+      return rowSelection.value;
+    },
+  },
+  onSortingChange: (updaterOrValue) => {
+    sorting.value =
+      typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue;
+  },
+  onRowSelectionChange: (updaterOrValue) => {
+    rowSelection.value =
+      typeof updaterOrValue === 'function' ? updaterOrValue(rowSelection.value) : updaterOrValue;
+  },
+  enableRowSelection: props.enableSelection,
+  autoResetPageIndex: props.autoResetPageIndex,
+});
+
+const { t } = useI18n();
+</script>
+
+<template>
+  <div class="flex flex-col space-y-4 relative">
+    <!-- Table -->
+    <div class="relative rounded-[6px] overflow-auto flex-1 min-h-0">
+      <Table class="w-full relative">
+        <TableHeader class="sticky top-0 bg-white z-10 shadow-sm whitespace-nowrap">
+          <TableRow
+            v-for="headerGroup in table.getHeaderGroups()"
+            :key="headerGroup.id"
+            class="bg-slate-50/80 backdrop-blur-sm"
+          >
+            <TableHead v-for="header in headerGroup.headers" :key="header.id">
+              <FlexRender
+                v-if="!header.isPlaceholder"
+                :render="header.column.columnDef.header"
+                :props="header.getContext()"
+              />
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <template v-if="table.getRowModel().rows?.length">
+            <TableRow
+              v-for="row in table.getRowModel().rows"
+              :key="row.id"
+              :data-state="row.getIsSelected() ? 'selected' : undefined"
+              @click="emit('rowClick', row.original)"
+              class="cursor-pointer hover:bg-muted/50"
+            >
+              <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
+                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+              </TableCell>
+            </TableRow>
+          </template>
+          <template v-else>
+            <TableRow>
+              <TableCell :colspan="columnsWithSelection.length" class="h-24 text-center">
+                {{ t('common.table.noResults') }}
+              </TableCell>
+            </TableRow>
+          </template>
+        </TableBody>
+      </Table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between px-6 py-2">
+      <div class="flex items-center gap-4">
+        <!-- Page Size Selector - Moved to front -->
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-muted-foreground">{{ t('common.table.rowsPerPage') }}</span>
+          <Select
+            :model-value="String(table.getState().pagination.pageSize)"
+            @update:model-value="(value) => table.setPageSize(Number(value))"
+          >
+            <SelectTrigger
+              class="h-8 w-[70px] bg-background border-input hover:bg-accent hover:text-accent-foreground"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="15">15</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div v-if="enableSelection" class="text-sm text-muted-foreground">
+          {{
+            t('common.table.selectedRows', {
+              selected: table.getFilteredSelectedRowModel().rows.length,
+              total: table.getFilteredRowModel().rows.length,
+            })
+          }}
+        </div>
+
+        <!-- Delete Selected Button - Improved styling -->
+        <Button
+          v-if="table.getFilteredSelectedRowModel().rows.length > 0"
+          variant="destructive"
+          size="default"
+          class="gap-2 font-medium shadow-md hover:shadow-lg transition-all"
+          @click="
+            emit(
+              'deleteSelected',
+              table.getFilteredSelectedRowModel().rows.map((r) => r.original)
+            )
+          "
+        >
+          <Trash2 class="w-4 h-4" />
+          <span>{{
+            t('common.table.deleteSelected', {
+              count: table.getFilteredSelectedRowModel().rows.length,
+            })
+          }}</span>
+        </Button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div class="text-sm text-muted-foreground">
+          {{
+            t('common.table.pageOf', {
+              current: table.getState().pagination.pageIndex + 1,
+              total: table.getPageCount(),
+            })
+          }}
+        </div>
+        <div class="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="!table.getCanPreviousPage()"
+            @click="table.previousPage()"
+          >
+            {{ t('common.previous') }}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="!table.getCanNextPage()"
+            @click="table.nextPage()"
+          >
+            {{ t('common.next') }}
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

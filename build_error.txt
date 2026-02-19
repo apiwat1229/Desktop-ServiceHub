@@ -1,0 +1,35 @@
+
+> desktop@1.1.12 build:web
+> vite build
+
+[unplugin-vue-components] component "Sidebar"(C:/Users/apiwa/Desktop/Desktop-Frontend/src/components/ui/sidebar/Sidebar.vue) has naming conflicts with other components, ignored.
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 2257 modules transformed.
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 561 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist-electron/[22m[36mmain.js  [39m[1m[2m379.44 kB[22m[1m[22m[2m │ gzip: 101.60 kB[22m
+[32m✓ built in 4.73s[39m
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 1 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist-electron/[22m[36mpreload.mjs  [39m[1m[2m1.62 kB[22m[1m[22m[2m │ gzip: 0.47 kB[22m
+[32m✓ built in 13ms[39m
+[31mx[39m Build failed in 8.39s
+[31merror during build:
+[31m[vite]: Rollup failed to resolve import "vue3-barcode" from "C:/Users/apiwa/Desktop/Desktop-Frontend/src/views/admin/components/mymachine/StockForm.vue?vue&type=script&setup=true&lang.ts".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`[31m
+    at viteWarn (file:///C:/Users/apiwa/Desktop/Desktop-Frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:65855:17)
+    at onRollupWarning (file:///C:/Users/apiwa/Desktop/Desktop-Frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:65887:5)
+    at onwarn (file:///C:/Users/apiwa/Desktop/Desktop-Frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:65550:7)
+    at file:///C:/Users/apiwa/Desktop/Desktop-Frontend/node_modules/rollup/dist/es/shared/node-entry.js:20972:13
+    at Object.logger [as onLog] (file:///C:/Users/apiwa/Desktop/Desktop-Frontend/node_modules/rollup/dist/es/shared/node-entry.js:22945:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///C:/Users/apiwa/Desktop/Desktop-Frontend/node_modules/rollup/dist/es/shared/node-entry.js:21689:26)
+    at file:///C:/Users/apiwa/Desktop/Desktop-Frontend/node_modules/rollup/dist/es/shared/node-entry.js:21647:26[39m

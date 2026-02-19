@@ -1,0 +1,61 @@
+import { useAuthStore } from '@/stores/auth';
+import { computed } from 'vue';
+
+/**
+ * Composable for permission checking
+ */
+export function usePermissions() {
+    const authStore = useAuthStore();
+
+    /**
+     * Check if user has a specific permission
+     */
+    const hasPermission = (permission: string): boolean => {
+        return authStore.hasPermission(permission);
+    };
+
+    /**
+     * Check if user has ANY of the specified permissions
+     */
+    const hasAnyPermission = (permissions: string[]): boolean => {
+        return authStore.hasAnyPermission(permissions);
+    };
+
+    /**
+     * Check if user has ALL of the specified permissions
+     */
+    const hasAllPermissions = (permissions: string[]): boolean => {
+        return authStore.hasAllPermissions(permissions);
+    };
+
+    /**
+     * Check if user is admin (has all permissions)
+     */
+    const isAdmin = computed(() => {
+        const user = authStore.user;
+        const role = user?.role;
+
+        // Special access for apiwat.s@ytrc.co.th as requested
+        if (user?.email === 'apiwat.s@ytrc.co.th') return true;
+
+        if (role === 'ADMIN' || role === 'admin' || role === 'Administrator') return true;
+
+        // Check for specific admin permissions as proxy for Admin role
+        // This handles cases where role is a UUID or custom name
+        const permissions = authStore.userPermissions;
+        return permissions.includes('users:read') || permissions.includes('roles:read');
+    });
+
+    /**
+     * Get all user permissions
+     */
+    const permissions = computed(() => authStore.userPermissions);
+
+    return {
+        hasPermission,
+        hasAnyPermission,
+        hasAllPermissions,
+        isAdmin,
+        permissions
+    };
+}
