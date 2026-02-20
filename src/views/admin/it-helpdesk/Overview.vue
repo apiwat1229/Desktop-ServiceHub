@@ -5,25 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { itTicketsApi, type ITTicket } from "@/services/it-tickets";
 import { socketService } from "@/services/socket";
 import {
-  endOfMonth,
-  format,
-  isAfter,
-  isBefore,
-  startOfMonth,
-  subMonths,
+    endOfMonth,
+    format,
+    isAfter,
+    isBefore,
+    startOfMonth,
+    subMonths,
 } from "date-fns";
 import {
-  Activity,
-  ArrowDownRight,
-  ArrowUpRight,
-  CheckCircle2,
-  ClipboardList,
-  Clock,
-  Star,
-  Target,
-  Ticket,
-  User,
-  Zap,
+    Activity,
+    ArrowDownRight,
+    ArrowUpRight,
+    CheckCircle2,
+    ClipboardList,
+    Clock,
+    Star,
+    Target,
+    Ticket,
+    User,
+    Zap,
 } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -43,7 +43,7 @@ const openTicketDetails = (ticket: ITTicket) => {
   isDetailModalOpen.value = true;
 };
 
-const onTicketUpdated = (updatedTicket: ITTicket) => {
+const onTicketUpdated = () => {
   loadTickets();
 };
 
@@ -396,7 +396,7 @@ const recentTicketsList = computed(() =>
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
-    .slice(0, 5),
+    .slice(0, 10),
 );
 
 const categoryColors = [
@@ -718,11 +718,12 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
                   }}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-xs font-black text-foreground">{{
-                    item.count
-                  }}</span>
+                  <div class="flex items-center gap-1.5 min-w-[60px] justify-end">
+                    <span class="text-xs font-black text-foreground">{{ item.count }}</span>
+                    <span class="text-[0.65rem] font-bold text-muted-foreground/50 uppercase tracking-widest">{{ item.count <= 1 ? 'Ticket' : 'Tickets' }}</span>
+                  </div>
                   <span
-                    class="text-[0.6rem] font-bold text-muted-foreground/50 w-8 text-right"
+                    class="text-xs font-bold text-foreground w-8 text-right shrink-0"
                     >{{ item.percent }}%</span
                   >
                 </div>
@@ -873,7 +874,7 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
             </svg>
           </div>
           <div
-            class="text-center text-sm font-black text-muted-foreground/60 mt-3 uppercase tracking-tight"
+            class="text-center text-sm font-black text-foreground mt-3 uppercase tracking-tight"
           >
             Based on {{ ticketStats.resolved }} resolved tickets
           </div>
@@ -913,7 +914,7 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
                   v-for="(slice, i) in replyTimeSlices"
                   :key="i"
                   v-show="slice.percent >= 5"
-                  class="absolute flex items-center justify-center text-[0.65rem] font-black text-white drop-shadow-md transform -translate-x-1/2 -translate-y-1/2"
+                  class="absolute flex items-center justify-center text-xs font-black text-white drop-shadow-md transform -translate-x-1/2 -translate-y-1/2"
                   :style="{ left: slice.lx + '%', top: slice.ly + '%' }"
                 >
                   {{ slice.percent }}%
@@ -953,7 +954,7 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
                   item.count
                 }}</span>
                 <span
-                  class="text-[0.65rem] font-bold text-muted-foreground/60 w-9 text-right"
+                  class="text-xs font-bold text-muted-foreground/60 w-9 text-right"
                 >
                   {{ item.percent }}%
                 </span>
@@ -1000,10 +1001,10 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
               No Tickets
             </p>
           </div>
-          <div v-else class="space-y-1">
+          <div v-else class="space-y-1 max-h-[600px] overflow-y-auto scrollbar-hide pr-1">
             <!-- Table Header -->
             <div
-              class="grid grid-cols-[4px_1fr_90px_110px_70px_100px] gap-4 px-2 py-2 text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground/50 border-b border-border/30"
+              class="grid grid-cols-[4px_1fr_90px_110px_70px_100px] gap-4 px-2 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground/50 border-b border-border/30"
             >
               <div></div>
               <div>Subject / Requester</div>
@@ -1028,12 +1029,12 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
               <!-- Content -->
               <div class="min-w-0">
                 <p
-                  class="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors leading-tight"
+                  class="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors leading-tight"
                 >
                   {{ ticket.title }}
                 </p>
                 <p
-                  class="text-[0.6rem] font-bold text-muted-foreground/60 uppercase tracking-widest mt-0.5"
+                  class="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest mt-0.5"
                 >
                   by {{ ticket.requester?.displayName || "—" }}
                 </p>
@@ -1041,14 +1042,14 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
               <!-- Resolution Time -->
               <div class="flex justify-center">
                 <span
-                  class="inline-flex items-center px-2 py-0.5 rounded-[6px] text-[0.65rem] font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm"
+                  class="inline-flex items-center px-2 py-0.5 rounded-[6px] text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm"
                 >
                   {{ getDuration(ticket) }}
                 </span>
               </div>
               <!-- Opened Time -->
               <div
-                class="text-[0.65rem] font-bold text-muted-foreground tabular-nums text-center"
+                class="text-xs font-bold text-muted-foreground tabular-nums text-center"
               >
                 {{ formatFullTime(ticket.createdAt) }}
               </div>
@@ -1069,7 +1070,7 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
               <div class="flex justify-center">
                 <span
                   :class="[
-                    'px-2.5 py-0.5 rounded-[6px] text-[0.6rem] font-black uppercase tracking-widest',
+                    'px-2.5 py-0.5 rounded-[6px] text-xs font-black uppercase tracking-widest',
                     ticket.status === 'Resolved' || ticket.status === 'Closed'
                       ? 'bg-teal-100 dark:bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/20'
                       : ticket.status === 'In Progress'
@@ -1122,7 +1123,7 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
                 {{ agent.name }}
               </p>
               <p
-                class="text-[0.6rem] font-bold text-muted-foreground/50 uppercase tracking-widest"
+                class="text-xs font-bold text-muted-foreground/50 uppercase tracking-widest"
               >
                 IT Support Agent
               </p>
@@ -1132,7 +1133,7 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
                 agent.count
               }}</span>
               <span
-                class="text-[0.6rem] font-bold text-muted-foreground/60 ml-1"
+                class="text-xs font-bold text-muted-foreground/60 ml-1"
                 >Tickets</span
               >
             </div>

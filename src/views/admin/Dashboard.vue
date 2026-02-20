@@ -829,10 +829,10 @@ onUnmounted(() => {
           <div v-if="!agentStats.length" class="text-center py-8 text-muted-foreground/30 text-xs font-bold uppercase tracking-widest">No resolved tickets</div>
           <div v-for="(agent, i) in agentStats" :key="i" class="flex items-center gap-3 py-3 border-b border-border/30 last:border-0">
             <Avatar class="w-10 h-10 rounded-[10px] border border-border/40 shadow-sm shrink-0">
-              <AvatarFallback class="text-xs bg-primary/5 text-primary font-black rounded-[10px]">{{ agent.name.charAt(0) }}</AvatarFallback>
+              <AvatarFallback class="text-xs bg-primary/5 text-primary font-black rounded-[10px]">{{ agent.name?.charAt(0) || '?' }}</AvatarFallback>
             </Avatar>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-foreground truncate">{{ agent.name }}</p>
+              <p class="text-sm font-bold text-foreground truncate">{{ agent.name || 'Unknown' }}</p>
               <p class="text-[0.6rem] font-bold text-muted-foreground/50 uppercase tracking-widest">IT Support Agent</p>
             </div>
             <div class="text-right shrink-0">

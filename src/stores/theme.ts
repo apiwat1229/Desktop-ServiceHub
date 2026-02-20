@@ -58,10 +58,10 @@ export const useThemeStore = defineStore('theme', () => {
     };
 
     const fontSizes: Record<string, string> = {
-        small: '14px',
-        medium: '15px',
-        large: '16px',
-        xl: '18px',
+        small: '15px',
+        medium: '16px',
+        large: '18px',
+        xl: '20px',
     };
 
     // Apply changes to DOM

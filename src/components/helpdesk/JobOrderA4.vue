@@ -120,10 +120,10 @@ const startEditingTitle = () => {
           <div class="flex items-baseline gap-2">
             <span class="text-[0.7rem] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded print:bg-transparent print:p-0 print:text-slate-500 whitespace-nowrap">Subject:</span>
             <div class="flex-1">
-               <DialogTitle v-if="!isEditingTitle" @click="startEditingTitle" class="text-lg font-black text-slate-900 cursor-pointer hover:text-primary transition-colors uppercase leading-none print:text-black print:text-lg">
+               <DialogTitle v-if="!isEditingTitle" @click="startEditingTitle" class="text-sm font-medium text-slate-900 cursor-pointer hover:text-primary transition-colors uppercase leading-none print:text-black print:text-sm">
                  {{ localTicket?.title }}
                </DialogTitle>
-               <Input v-else v-model="localTicket!.title" @blur="isEditingTitle = false" @keyup.enter="isEditingTitle = false" autoFocus class="text-lg font-black h-auto px-0 py-0 border-transparent bg-transparent shadow-none focus-visible:ring-0 uppercase -mt-1 print:hidden" />
+               <Input v-else v-model="localTicket!.title" @blur="isEditingTitle = false" @keyup.enter="isEditingTitle = false" autoFocus class="text-sm font-medium h-auto px-0 py-0 border-transparent bg-transparent shadow-none focus-visible:ring-0 uppercase -mt-1 print:hidden" />
             </div>
           </div>
         </div>
@@ -132,14 +132,14 @@ const startEditingTitle = () => {
             <Textarea 
               v-model="localTicket!.description"
               @update:modelValue="(val) => emit('update:ticket', { ...localTicket!, description: val } as ITTicket)"
-              class="min-h-[120px] bg-transparent border-0 focus-visible:ring-0 resize-none text-[0.8rem] leading-relaxed p-4 font-bold text-slate-700 shadow-none border-b-0 print:hidden" 
+              class="min-h-[120px] bg-transparent border-0 focus-visible:ring-0 resize-none text-[0.8rem] leading-relaxed p-4 font-medium text-slate-700 shadow-none border-b-0 print:hidden" 
             />
             <!-- Print-only description (remove border and bg in print logic) -->
-            <div class="hidden print:block whitespace-pre-wrap font-bold text-slate-900">
+            <div class="hidden print:block whitespace-pre-wrap font-medium text-slate-900">
                {{ localTicket?.description || 'No detailed description provided.' }}
             </div>
           </div>
-          <div v-else class="whitespace-pre-wrap font-bold text-slate-900">
+          <div v-else class="whitespace-pre-wrap font-medium text-slate-900">
             {{ localTicket?.description || 'No detailed description provided.' }}
           </div>
         </div>
@@ -230,7 +230,7 @@ const startEditingTitle = () => {
          <span class="print:text-slate-300">A4 STANDARD LAYOUT</span>
       </div>
       <div class="text-right text-slate-400 font-black print:text-slate-500">
-        PRINTED ON JOB: {{ format(new Date(), 'dd/MM/yyyy HH:mm') }}
+        PRINTED ON JOB: {{ format(new Date(), 'dd-MMM-yyyy HH:mm') }}
       </div>
     </div>
   </div>

@@ -3,19 +3,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import api from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
-import { Bell, Camera, Lock, Shield, User } from 'lucide-vue-next';
+import { Camera, Check, Lock, PenLine, Shield } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { CircleStencil, Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
@@ -29,8 +28,13 @@ const isLoading = ref(false);
 const isUploading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 
+// Profile Edit Logic
+const isEditingProfile = ref(false);
+
 // PIN Logic
 const showPinDialog = ref(false);
+const showSignatureDialog = ref(false);
+const showPasswordDialog = ref(false);
 const isSavingPin = ref(false);
 const pinData = ref({ pin: '', confirmPin: '' });
 const hasPin = computed(() => !!authStore.user?.pinCode); // Assuming backend sends a boolean or we check existence
@@ -61,6 +65,44 @@ const handleSavePin = async () => {
   }
 };
 
+// Password Logic
+const passwordData = ref({ oldPassword: '', newPassword: '', confirmPassword: '' });
+const errorMsg = ref('');
+
+const handleSavePassword = async () => {
+  if (passwordData.value.newPassword !== passwordData.value.confirmPassword) {
+    errorMsg.value = "Passwords don't match";
+    return;
+  }
+  if (passwordData.value.newPassword.length < 8) {
+    errorMsg.value = 'Password must be at least 8 characters';
+    return;
+  }
+  
+  errorMsg.value = '';
+  isLoading.value = true;
+  try {
+    const token = authStore.tempToken || localStorage.getItem('token');
+    if (!token) throw new Error('Session expired');
+
+    await api.post(
+      '/auth/change-password',
+      {
+        oldPassword: passwordData.value.oldPassword,
+        newPassword: passwordData.value.newPassword,
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    toast.success('Password changed successfully');
+    showPasswordDialog.value = false;
+    passwordData.value = { oldPassword: '', newPassword: '', confirmPassword: '' };
+  } catch (err: any) {
+    errorMsg.value = err.response?.data?.message || err.message || 'Failed to change password';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 // Cropper Logic
 const showCropDialog = ref(false);
 const cropImageSrc = ref('');
@@ -75,7 +117,23 @@ const formData = ref({
   firstName: authStore.user?.firstName || '',
   lastName: authStore.user?.lastName || '',
   displayName: authStore.user?.displayName || '',
+  employeeId: authStore.user?.employeeId || '',
+  signatureText: authStore.user?.signatureText || '',
+  signatureStyle: authStore.user?.signatureStyle || 'Caveat',
 });
+
+const signatureFonts = [
+  { name: 'Caveat', family: "'Caveat', cursive" },
+  { name: 'Dancing Script', family: "'Dancing Script', cursive" },
+  { name: 'Great Vibes', family: "'Great Vibes', cursive" },
+  { name: 'Pacifico', family: "'Pacifico', cursive" },
+  { name: 'Satisfy', family: "'Satisfy', cursive" },
+  { name: 'Pinyon Script', family: "'Pinyon Script', cursive" },
+  { name: 'Marck Script', family: "'Marck Script', cursive" },
+  { name: 'Courgette', family: "'Courgette', cursive" },
+  { name: 'Meow Script', family: "'Meow Script', cursive" },
+  { name: 'Sacramento', family: "'Sacramento', cursive" },
+];
 
 const userInitials = () => {
   if (!authStore.user?.firstName) return 'U';
@@ -90,10 +148,14 @@ const handleSaveProfile = async () => {
       firstName: formData.value.firstName,
       lastName: formData.value.lastName,
       displayName: formData.value.displayName,
+      employeeId: formData.value.employeeId,
+      signatureText: formData.value.signatureText,
+      signatureStyle: formData.value.signatureStyle,
     });
 
     await authStore.fetchUser(); // Refresh local data
     toast.success('Profile updated successfully');
+    isEditingProfile.value = false;
   } catch (error) {
     toast.error('Failed to update profile');
   } finally {
@@ -180,40 +242,34 @@ const uploadCroppedImage = async () => {
 </script>
 
 <template>
-  <div class="container max-w-4xl py-6 space-y-8 animate-in fade-in duration-500">
-    <!-- Header -->
-    <div class="space-y-1">
-      <h2 class="text-3xl font-bold tracking-tight">User Profile</h2>
-      <p class="text-muted-foreground">Manage your personal information and security settings.</p>
-    </div>
-
-    <!-- Profile Configuration Section (Always Visible) -->
-    <Card>
-      <CardHeader>
-        <CardTitle>Profile Configuration</CardTitle>
-        <CardDescription
-          >Manage your profile picture and view your account details.</CardDescription
-        >
+  <div class="container max-w-[1400px] py-10 space-y-6 animate-in fade-in duration-500">
+    <!-- Profile Configuration Section -->
+    <Card class="border-0 shadow-2xl shadow-slate-200/50 rounded-2xl overflow-hidden bg-white/80 backdrop-blur-xl">
+      <CardHeader class="pb-4 px-8 pt-8">
+        <CardTitle class="text-lg font-black text-slate-900">Profile Configuration</CardTitle>
+        <CardDescription class="text-xs font-medium text-slate-500">Manage your profile picture and view your account details.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x">
+      <CardContent class="p-8 pt-0">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <!-- Left: Profile Picture -->
-          <div class="flex flex-col items-center justify-center gap-6 py-4">
-            <Avatar class="h-32 w-32 border-4 border-background shadow-lg ring-2 ring-muted">
+          <div class="flex flex-col items-center justify-center gap-6">
+            <Avatar class="h-40 w-40 border-[6px] border-white shadow-xl ring-1 ring-slate-100/50">
               <AvatarImage
                 :src="authStore.userAvatarUrl"
                 :alt="authStore.user?.username || ''"
                 class="object-cover"
               />
-              <AvatarFallback class="text-4xl font-bold">{{ userInitials() }}</AvatarFallback>
+              <AvatarFallback class="text-5xl font-black bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+                {{ userInitials() }}
+              </AvatarFallback>
             </Avatar>
 
-            <div class="text-center space-y-2">
-              <h4 class="font-medium text-lg">
-                {{ authStore.user?.displayName || authStore.user?.username }}
+            <div class="text-center space-y-1">
+              <h4 class="font-black text-xl text-slate-900">
+                {{ authStore.user?.username }}
               </h4>
-              <p class="text-xs text-muted-foreground uppercase tracking-widest font-bold">
-                {{ authStore.user?.role }}
+              <p class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                {{ authStore.user?.id || 'NO-ID-FOUND' }}
               </p>
             </div>
 
@@ -230,171 +286,243 @@ const uploadCroppedImage = async () => {
                 size="sm"
                 @click="handleUploadPhoto"
                 :disabled="isUploading"
+                class="rounded-xl font-bold text-xs uppercase tracking-widest border-slate-200 hover:bg-slate-50 text-slate-600 h-9 px-4"
               >
-                <Camera class="w-4 h-4 mr-2" />
+                <Camera class="w-3.5 h-3.5 mr-2" />
                 {{ isUploading ? 'Uploading...' : 'Upload New Picture' }}
               </Button>
             </div>
           </div>
 
           <!-- Right: User Details -->
-          <div class="space-y-6 md:pl-8 py-4">
-            <div class="space-y-4">
-              <h4 class="font-semibold flex items-center gap-2">
-                <Shield class="w-4 h-4 text-primary" />
+          <div class="space-y-8 pl-0 md:pl-12 border-l-0 md:border-l border-slate-100">
+            <div class="space-y-5">
+              <h4 class="font-black text-sm flex items-center gap-2.5 text-slate-800">
+                <Shield class="w-4 h-4 text-emerald-500" />
                 Account Details
               </h4>
 
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
-                  <span class="text-xs text-muted-foreground">Department</span>
-                  <p class="font-medium text-sm">{{ authStore.user?.department || '-' }}</p>
+              <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-1.5">
+                  <span class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Department</span>
+                  <p class="font-black text-sm text-slate-800">{{ authStore.user?.department || 'Information Technology' }}</p>
                 </div>
-                <div class="space-y-1">
-                  <span class="text-xs text-muted-foreground">Position</span>
-                  <p class="font-medium text-sm">{{ authStore.user?.position || '-' }}</p>
+                <div class="space-y-1.5">
+                  <span class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Position</span>
+                  <p class="font-black text-sm text-slate-800">{{ authStore.user?.position || 'Assistant Manager' }}</p>
                 </div>
-                <div class="space-y-1">
-                  <span class="text-xs text-muted-foreground">Employee ID</span>
-                  <p class="font-medium text-sm">{{ authStore.user?.employeeId || '-' }}</p>
+                <div class="space-y-1.5">
+                  <span class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Employee ID</span>
+                  <p class="font-black text-sm text-slate-800">{{ authStore.user?.employeeId || '-' }}</p>
                 </div>
-                <div class="space-y-1">
-                  <span class="text-xs text-muted-foreground">Status</span>
+                <div class="space-y-1.5">
+                  <span class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Status</span>
                   <div class="flex items-center gap-2">
                     <div
-                      class="h-2 w-2 rounded-full"
-                      :class="authStore.user?.status === 'ACTIVE' ? 'bg-green-500' : 'bg-red-500'"
+                      class="h-2 w-2 rounded-full shadow-sm"
+                      :class="authStore.user?.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-rose-500'"
                     ></div>
-                    <p class="font-medium text-sm">{{ authStore.user?.status }}</p>
+                    <p class="font-black text-xs uppercase tracking-widest" :class="authStore.user?.status === 'ACTIVE' ? 'text-emerald-600' : 'text-rose-600'">
+                      {{ authStore.user?.status || 'ACTIVE' }}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="space-y-4 pt-4 border-t">
-              <h4 class="font-semibold flex items-center gap-2">
-                <Bell class="w-4 h-4 text-primary" />
-                Notifications
+            <div class="space-y-4 pt-6 border-t border-slate-100">
+              <h4 class="font-black text-sm flex items-center gap-2.5 text-slate-800">
+                <PenLine class="w-4 h-4 text-primary" />
+                E-Signature
               </h4>
-              <div class="text-sm text-muted-foreground">
-                <p>You are subscribed to standard notifications for your role.</p>
+              <div 
+                v-if="formData.signatureStyle"
+                class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center justify-center min-h-[80px]"
+              >
+                <span 
+                  class="text-3xl text-slate-800 px-3 text-center leading-relaxed" 
+                  :style="{ fontFamily: signatureFonts.find(f => f.name === formData.signatureStyle)?.family || '' }"
+                >
+                  {{ formData.signatureText || formData.username }}
+                </span>
               </div>
+              <p v-else class="text-xs font-medium text-slate-500 leading-relaxed">
+                You have not configured an E-Signature yet.
+              </p>
             </div>
           </div>
         </div>
       </CardContent>
     </Card>
 
-    <Tabs default-value="general" class="space-y-6">
-      <TabsList>
-        <TabsTrigger value="general" class="gap-2"> General Info </TabsTrigger>
-        <TabsTrigger value="security" class="gap-2"> Security </TabsTrigger>
-      </TabsList>
-
-      <!-- General Info Tab -->
-      <TabsContent value="general" class="space-y-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
+      <!-- General Info -->
+      <div class="h-full">
         <!-- Personal Information Section -->
-        <Card>
-          <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-            <CardDescription>Manage your personal information.</CardDescription>
-          </CardHeader>
-          <CardContent class="space-y-6">
-            <div class="grid grid-cols-2 gap-6">
-              <div class="space-y-2">
-                <Label for="username">Username</Label>
-                <div class="relative">
-                  <Input id="username" v-model="formData.username" disabled class="bg-muted/50" />
-                  <Lock class="w-3 h-3 absolute right-3 top-3 text-muted-foreground" />
-                </div>
-              </div>
-              <div class="space-y-2">
-                <Label for="email">Email</Label>
-                <div class="relative">
-                  <Input id="email" v-model="formData.email" disabled class="bg-muted/50" />
-                  <Lock class="w-3 h-3 absolute right-3 top-3 text-muted-foreground" />
-                </div>
-              </div>
+        <Card class="h-full border-0 shadow-xl shadow-slate-200/50 rounded-2xl bg-white/80 backdrop-blur-xl flex flex-col">
+          <CardHeader class="px-8 pt-8 pb-4 flex flex-row items-center justify-between shrink-0">
+            <div>
+              <CardTitle class="text-base font-black text-slate-900">Personal Information</CardTitle>
+              <CardDescription class="text-xs font-medium text-slate-500">Manage your personal information.</CardDescription>
             </div>
-
-            <div class="grid grid-cols-2 gap-6">
-              <div class="space-y-2">
-                <Label for="firstName">First Name</Label>
-                <Input id="firstName" v-model="formData.firstName" />
-              </div>
-              <div class="space-y-2">
-                <Label for="lastName">Last Name</Label>
-                <Input id="lastName" v-model="formData.lastName" />
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <Label for="displayName">Display Name</Label>
-              <Input id="displayName" v-model="formData.displayName" />
-            </div>
-
-            <div class="flex justify-end pt-4">
-              <Button @click="handleSaveProfile" :disabled="isLoading">
-                {{ isLoading ? 'Saving...' : 'Save Changes' }}
+            
+            <div class="flex items-center gap-2">
+              <Button 
+                v-if="!isEditingProfile"
+                @click="isEditingProfile = true" 
+                variant="outline"
+                class="rounded-xl h-10 px-6 font-bold text-xs uppercase tracking-widest border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm"
+              >
+                Edit
               </Button>
+              <template v-else>
+                <Button 
+                  @click="isEditingProfile = false" 
+                  variant="ghost"
+                  class="rounded-xl h-10 px-4 font-bold text-xs uppercase tracking-widest text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  @click="handleSaveProfile" 
+                  :disabled="isLoading"
+                  class="bg-teal-500 hover:bg-teal-600 text-white rounded-xl h-10 px-6 font-black text-xs uppercase tracking-widest shadow-lg shadow-teal-500/20"
+                >
+                  {{ isLoading ? 'Saving...' : 'Save Changes' }}
+                </Button>
+              </template>
+            </div>
+          </CardHeader>
+          <CardContent class="p-8 pt-2 space-y-8 flex-1">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="space-y-2.5">
+                <Label for="username" class="text-xs font-bold text-slate-700">Username</Label>
+                <div class="relative">
+                  <Input id="username" v-model="formData.username" disabled class="bg-slate-50/50 border-slate-200 text-slate-500 font-medium h-11 rounded-xl px-4 shadow-sm" />
+                  <Lock class="w-4 h-4 absolute right-4 top-3.5 text-slate-300" />
+                </div>
+              </div>
+              <div class="space-y-2.5">
+                <Label for="email" class="text-xs font-bold text-slate-700">Email</Label>
+                <div class="relative">
+                  <Input id="email" v-model="formData.email" disabled class="bg-slate-50/50 border-slate-200 text-slate-500 font-medium h-11 rounded-xl px-4 shadow-sm" />
+                  <Lock class="w-4 h-4 absolute right-4 top-3.5 text-slate-300" />
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="space-y-2.5">
+                <Label for="firstName" class="text-xs font-bold text-slate-700">First Name</Label>
+                <Input id="firstName" v-model="formData.firstName" :disabled="!isEditingProfile" :class="!isEditingProfile ? 'bg-slate-50 border-slate-100 text-slate-500 shadow-none' : 'border-slate-200 text-slate-900 shadow-sm focus-visible:ring-primary/20'" class="font-bold h-11 rounded-xl px-4 transition-colors" />
+              </div>
+              <div class="space-y-2.5">
+                <Label for="lastName" class="text-xs font-bold text-slate-700">Last Name</Label>
+                <Input id="lastName" v-model="formData.lastName" :disabled="!isEditingProfile" :class="!isEditingProfile ? 'bg-slate-50 border-slate-100 text-slate-500 shadow-none' : 'border-slate-200 text-slate-900 shadow-sm focus-visible:ring-primary/20'" class="font-bold h-11 rounded-xl px-4 transition-colors" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="space-y-2.5">
+                <Label for="displayName" class="text-xs font-bold text-slate-700">Display Name</Label>
+                <Input id="displayName" v-model="formData.displayName" :disabled="!isEditingProfile" :class="!isEditingProfile ? 'bg-slate-50 border-slate-100 text-slate-500 shadow-none' : 'border-slate-200 text-slate-900 shadow-sm focus-visible:ring-primary/20'" class="font-bold h-11 rounded-xl px-4 transition-colors" />
+              </div>
+              <div class="space-y-2.5">
+                <Label for="employeeId" class="text-xs font-bold text-slate-700">Employee ID</Label>
+                <Input id="employeeId" v-model="formData.employeeId" :disabled="!isEditingProfile" :class="!isEditingProfile ? 'bg-slate-50 border-slate-100 text-slate-500 shadow-none' : 'border-slate-200 text-slate-900 shadow-sm focus-visible:ring-primary/20'" class="font-bold h-11 rounded-xl px-4 transition-colors" />
+              </div>
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      </div>
 
-      <!-- Security Tab -->
-      <TabsContent value="security" class="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Security Settings</CardTitle>
-            <CardDescription>Manage your password and security preferences.</CardDescription>
+      <!-- Security -->
+      <div class="h-full">
+        <Card class="h-full border-0 shadow-xl shadow-slate-200/50 rounded-2xl bg-white/80 backdrop-blur-xl flex flex-col">
+          <CardHeader class="px-8 pt-8 pb-4 shrink-0">
+            <CardTitle class="text-base font-black text-slate-900">Security & Signatures</CardTitle>
+            <CardDescription class="text-xs font-medium text-slate-500">Manage your passwords, PIN, and digital signature.</CardDescription>
           </CardHeader>
-          <CardContent class="space-y-6">
+          <CardContent class="p-8 pt-2 space-y-4 flex-1">
             <!-- Password Section -->
-            <div class="flex items-center justify-between p-4 border rounded-lg bg-card">
-              <div class="flex items-center gap-4">
-                <div class="p-2 bg-primary/10 rounded-full">
-                  <Lock class="w-5 h-5 text-primary" />
+            <div class="flex items-center justify-between p-5 border border-slate-100 rounded-2xl bg-white shadow-sm hover:border-slate-200 hover:shadow-md transition-all">
+              <div class="flex items-center gap-5">
+                <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center shrink-0">
+                  <Lock class="w-5 h-5 text-indigo-500" />
                 </div>
                 <div>
-                  <h4 class="font-medium">Password</h4>
-                  <p class="text-sm text-muted-foreground">Change your password logic here.</p>
+                  <h4 class="font-black text-sm text-slate-900">Password</h4>
+                  <p class="text-xs font-medium text-slate-500 mt-0.5">Change your password logic here.</p>
                 </div>
               </div>
-              <Button variant="outline" @click="$router.push('/change-password')">
+              <Button 
+                variant="outline" 
+                @click="showPasswordDialog = true"
+                class="rounded-xl font-bold text-xs uppercase tracking-widest border-slate-200 hover:bg-slate-50 text-slate-600 h-10 px-6 shrink-0"
+              >
                 Change Password
               </Button>
             </div>
 
             <!-- PIN Code Section -->
-            <div class="flex items-center justify-between p-4 border rounded-lg bg-card">
-              <div class="flex items-center gap-4">
-                <div class="p-2 bg-primary/10 rounded-full">
-                  <Shield class="w-5 h-5 text-primary" />
+            <div class="flex items-center justify-between p-5 border border-slate-100 rounded-2xl bg-white shadow-sm hover:border-slate-200 hover:shadow-md transition-all">
+              <div class="flex items-center gap-5">
+                <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center shrink-0">
+                  <Shield class="w-5 h-5 text-emerald-500" />
                 </div>
                 <div>
-                  <h4 class="font-medium">Transaction PIN</h4>
-                  <p class="text-sm text-muted-foreground">
-                    Set up a PIN for verifying sensitive actions.
+                  <h4 class="font-black text-sm text-slate-900">Transaction PIN</h4>
+                  <p class="text-xs font-medium text-slate-500 mt-0.5">
+                    Verify sensitive actions with a 4-6 digit PIN.
                   </p>
                 </div>
               </div>
-              <Button variant="outline" @click="showPinDialog = true">
+              <Button 
+                variant="outline" 
+                @click="showPinDialog = true"
+                class="rounded-xl font-bold text-xs uppercase tracking-widest border-slate-200 hover:bg-slate-50 text-slate-600 h-10 px-6 shrink-0"
+              >
                 {{ hasPin ? 'Change PIN' : 'Set PIN' }}
+              </Button>
+            </div>
+
+            <!-- Signature Section -->
+            <div class="flex items-center justify-between p-5 border border-slate-100 rounded-2xl bg-white shadow-sm hover:border-slate-200 hover:shadow-md transition-all">
+              <div class="flex items-center gap-5">
+                <div class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
+                  <PenLine class="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h4 class="font-black text-sm text-slate-900">E-Signature</h4>
+                  <p class="text-xs font-medium text-slate-500 mt-0.5">
+                    Configure your digital signature style across {{ signatureFonts.length }} fonts.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                @click="showSignatureDialog = true"
+                class="rounded-xl font-bold text-xs uppercase tracking-widest border-slate-200 hover:bg-slate-50 text-slate-600 h-10 px-6 shrink-0"
+              >
+                Set Signature
               </Button>
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
-    </Tabs>
+      </div>
+    </div>
 
     <!-- Background Decorations -->
     <div
-      class="fixed font-bold text-[18.75rem] text-muted-foreground/5 opacity-[0.02] -z-10 top-0 right-0 pointer-events-none select-none rotate-12"
+      class="fixed inset-0 pointer-events-none -z-10 overflow-hidden"
     >
-      <User />
+      <div class="absolute top-20 right-[10%] opacity-[0.03] text-primary select-none rotate-12 scale-150 transform-gpu">
+         <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-fingerprint"><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.5 19.5c.5-1.5 1-4.5 1-7.5a2.5 2.5 0 0 1 5 0c0 3 .5 6 1 7.5"/><path d="M15.5 19.5c.5-1.5 1-4.5 1-7.5a6 6 0 0 0-12 0c0 3 .5 6 1 7.5"/><path d="M19 19.5c.5-1.5 1-4.5 1-7.5a9.5 9.5 0 0 0-19 0c0 3 .5 6 1 7.5"/></svg>
+      </div>
+      <div class="absolute bottom-20 left-[10%] opacity-[0.03] text-primary select-none -rotate-12 scale-150 transform-gpu">
+         <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-2.1 2.1a1 1 0 0 0 0 1.4Z"/><path d="m21.2 12.2-7.8 7.8c-.8.8-2 .8-2.8 0l-3.2-3.2a2 2 0 0 1 0-2.8l7.8-7.8"/><path d="M10 10 3 17v4h4l3-3"/><path d="m14 14-3 3"/></svg>
+      </div>
     </div>
-
     <!-- PIN Dialog -->
     <Dialog v-model:open="showPinDialog">
       <DialogContent>
@@ -453,6 +581,109 @@ const uploadCroppedImage = async () => {
           <Button variant="outline" @click="showCropDialog = false">Cancel</Button>
           <Button @click="uploadCroppedImage" :disabled="isUploading">
             {{ isUploading ? 'Uploading...' : 'Save & Upload' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- E-Signature Dialog -->
+    <Dialog v-model:open="showSignatureDialog">
+      <DialogContent class="sm:max-w-xl p-0 overflow-hidden border-0 shadow-2xl rounded-2xl">
+        <DialogHeader class="p-6 pb-2 border-b border-slate-100 bg-slate-50/50">
+          <DialogTitle class="text-lg font-black text-slate-900 flex items-center gap-2">
+            <PenLine class="w-5 h-5 text-primary" />
+            Configure E-Signature
+          </DialogTitle>
+          <DialogDescription class="text-xs font-medium text-slate-500">
+            Design your digital signature for signing documents.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+          <div class="space-y-2.5">
+            <Label for="dialogSignatureText" class="text-xs font-bold text-slate-700">Signature Name</Label>
+            <Input id="dialogSignatureText" v-model="formData.signatureText" placeholder="e.g. Apiwat Sukjaroen" class="border-slate-200 text-slate-900 font-bold h-11 rounded-xl px-4 shadow-sm focus-visible:ring-primary/20" />
+          </div>
+
+          <div class="space-y-4 pt-2">
+            <Label class="text-xs font-bold text-slate-700">Select Style ({{ signatureFonts.length }} available)</Label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div 
+                v-for="font in signatureFonts" 
+                :key="font.name"
+                @click="formData.signatureStyle = font.name"
+                class="relative p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-center min-h-[80px] overflow-hidden group"
+                :class="formData.signatureStyle === font.name ? 'border-primary bg-primary/5 shadow-md' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50/50 bg-white'"
+              >
+                <div class="absolute top-3 right-3">
+                  <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
+                       :class="formData.signatureStyle === font.name ? 'border-primary bg-primary' : 'border-slate-300'">
+                    <Check v-if="formData.signatureStyle === font.name" class="w-2.5 h-2.5 text-primary-foreground" stroke-width="3" />
+                  </div>
+                </div>
+                <span 
+                  class="text-3xl text-slate-800 px-3 text-center leading-relaxed truncate w-full" 
+                  :style="{ fontFamily: font.family }"
+                >
+                  {{ formData.signatureText || 'Apiwat Sukjaroen' }}
+                </span>
+                <span class="absolute bottom-1.5 left-3 text-[0.6rem] font-bold text-slate-400 capitalize opacity-50 group-hover:opacity-100 transition-opacity">
+                  {{ font.name }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <DialogFooter class="p-4 border-t border-slate-100 bg-slate-50/50">
+          <Button variant="outline" @click="showSignatureDialog = false" class="rounded-xl h-10 px-6 font-bold text-xs uppercase tracking-widest text-slate-600 border-slate-200">
+            Cancel
+          </Button>
+          <Button 
+            @click="handleSaveProfile" 
+            :disabled="isLoading"
+            class="rounded-xl h-10 px-6 font-black text-xs uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+          >
+            {{ isLoading ? 'Saving...' : 'Save Signature' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Change Password Dialog -->
+    <Dialog v-model:open="showPasswordDialog">
+      <DialogContent class="sm:max-w-md border-0 shadow-2xl rounded-2xl overflow-hidden p-0">
+        <DialogHeader class="p-6 pb-4 border-b border-slate-100 bg-slate-50/50">
+          <DialogTitle class="text-xl font-black text-slate-900 flex items-center gap-2 text-center justify-center pb-2">
+            Change Password
+          </DialogTitle>
+          <DialogDescription class="text-xs font-medium text-slate-500 text-center">
+            You are required to change your password to continue.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="p-6 space-y-5">
+          <div v-if="errorMsg" class="p-3 text-xs font-bold text-red-500 bg-red-50 rounded-xl flex items-center justify-center">
+            {{ errorMsg }}
+          </div>
+          
+          <div class="space-y-2">
+            <Label class="text-xs font-bold text-slate-700">Old Password</Label>
+            <Input v-model="passwordData.oldPassword" type="password" class="h-11 rounded-xl border-slate-200 shadow-sm px-4 focus-visible:ring-primary/20" />
+          </div>
+          <div class="space-y-2">
+            <Label class="text-xs font-bold text-slate-700">New Password</Label>
+            <Input v-model="passwordData.newPassword" type="password" class="h-11 rounded-xl border-slate-200 shadow-sm px-4 focus-visible:ring-primary/20" />
+          </div>
+          <div class="space-y-2">
+            <Label class="text-xs font-bold text-slate-700">Confirm Password</Label>
+            <Input v-model="passwordData.confirmPassword" type="password" class="h-11 rounded-xl border-slate-200 shadow-sm px-4 focus-visible:ring-primary/20" />
+          </div>
+        </div>
+        <DialogFooter class="p-6 pt-0">
+          <Button 
+            @click="handleSavePassword" 
+            :disabled="isLoading || !passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword" 
+            class="w-full bg-teal-500 hover:bg-teal-600 text-white rounded-xl h-11 font-black text-xs uppercase tracking-widest shadow-lg shadow-teal-500/20"
+          >
+            {{ isLoading ? 'Saving...' : 'Change Password' }}
           </Button>
         </DialogFooter>
       </DialogContent>

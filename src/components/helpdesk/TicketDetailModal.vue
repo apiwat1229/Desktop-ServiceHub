@@ -643,7 +643,7 @@ const handlePrint = async () => {
               <FileText class="w-4 h-4" />
             </div>
             <span
-              class="text-[0.55rem] font-black uppercase tracking-widest text-indigo-600"
+              class="text-xs font-black uppercase tracking-widest text-indigo-600"
               >Generate PDF</span
             >
           </button>
@@ -657,7 +657,7 @@ const handlePrint = async () => {
               <Printer class="w-4 h-4" />
             </div>
             <span
-              class="text-[0.55rem] font-black uppercase tracking-widest text-slate-400"
+              class="text-xs font-black uppercase tracking-widest text-slate-400"
               >Print</span
             >
           </button>
@@ -712,13 +712,13 @@ const handlePrint = async () => {
           <div class="space-y-6">
             <div class="flex items-center justify-between">
               <h4
-                class="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3"
+                class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3"
               >
                 <History class="w-4 h-4" />
                 System Audit & Activity Logs
               </h4>
               <span
-                class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest"
+                class="text-xs font-black text-slate-400 uppercase tracking-widest"
                 >{{ mergedTimeline.length }} Events</span
               >
             </div>
@@ -743,20 +743,20 @@ const handlePrint = async () => {
                     <Textarea
                       placeholder="Add an internal note or progress update..."
                       v-model="comment"
-                      class="min-h-[60px] bg-transparent border-0 focus-visible:ring-0 resize-none text-[0.8rem] font-bold p-0 shadow-none placeholder:text-slate-300"
+                      class="min-h-[60px] bg-transparent border-0 focus-visible:ring-0 resize-none text-sm font-bold p-0 shadow-none placeholder:text-slate-300"
                     />
                     <div
                       class="flex items-center justify-between mt-3 pt-3 border-t border-slate-50"
                     >
                       <span
-                        class="text-[0.6rem] font-black text-slate-300 uppercase tracking-widest italic"
+                        class="text-xs font-black text-slate-300 uppercase tracking-widest italic"
                         >Confidential Internal Remark</span
                       >
                       <Button
                         @click="handlePostComment"
                         :disabled="!comment.trim() || loading"
                         size="sm"
-                        class="bg-slate-900 hover:bg-black text-white px-4 h-7 text-[0.65rem] font-black uppercase tracking-widest rounded-lg shadow-md transition-all active:scale-95"
+                        class="bg-slate-900 hover:bg-black text-white px-4 h-7 text-xs font-black uppercase tracking-widest rounded-lg shadow-md transition-all active:scale-95"
                       >
                         Post Update
                       </Button>
@@ -789,11 +789,11 @@ const handlePrint = async () => {
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between mb-1.5">
                         <span
-                          class="text-[0.7rem] font-black text-slate-800 uppercase tracking-wide truncate pr-4"
+                          class="text-xs font-black text-slate-800 uppercase tracking-wide truncate pr-4"
                           >{{ item.user?.displayName || "System" }}</span
                         >
                         <span
-                          class="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest shrink-0"
+                          class="text-xs font-bold text-slate-400 uppercase tracking-widest shrink-0"
                           >{{ formatDate(item.createdAt) }}</span
                         >
                       </div>
@@ -807,7 +807,7 @@ const handlePrint = async () => {
 
                       <div
                         v-else
-                        class="flex flex-wrap items-center gap-1.5 text-[0.7rem] font-bold text-slate-500 py-1 uppercase"
+                        class="flex flex-wrap items-center gap-1.5 text-xs font-bold text-slate-500 py-1 uppercase"
                       >
                         <div
                           class="w-2 h-2 rounded-full bg-slate-300 mr-1"
@@ -861,7 +861,7 @@ const handlePrint = async () => {
                 <FileText class="w-4 h-4" />
               </div>
               <span
-                class="text-[0.55rem] font-black uppercase tracking-widest text-indigo-600"
+                class="text-xs font-black uppercase tracking-widest text-indigo-600"
                 >Generate PDF</span
               >
             </button>
@@ -875,7 +875,7 @@ const handlePrint = async () => {
                 <Printer class="w-4 h-4" />
               </div>
               <span
-                class="text-[0.55rem] font-black uppercase tracking-widest text-slate-400"
+                class="text-xs font-black uppercase tracking-widest text-slate-400"
                 >Print</span
               >
             </button>
@@ -890,7 +890,7 @@ const handlePrint = async () => {
                 <ArrowUpDown class="w-4 h-4" />
               </div>
               <span
-                class="text-[0.55rem] font-black uppercase tracking-widest text-emerald-600"
+                class="text-xs font-black uppercase tracking-widest text-emerald-600"
                 >{{ loading ? "Saving..." : "Update Status" }}</span
               >
             </button>
@@ -901,20 +901,20 @@ const handlePrint = async () => {
           <div class="flex gap-4">
             <button
               @click="isOpen = false"
-              class="text-[0.65rem] font-bold text-slate-400 hover:text-indigo-600 transition-all uppercase tracking-widest"
+              class="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-all uppercase tracking-widest"
             >
               History
             </button>
             <button
               @click="isOpen = false"
-              class="text-[0.65rem] font-bold text-slate-400 hover:text-indigo-600 transition-all uppercase tracking-widest"
+              class="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-all uppercase tracking-widest"
             >
               Reschedule
             </button>
             <button
               v-if="canManage"
               @click="handleDelete"
-              class="text-[0.65rem] font-bold text-rose-400 hover:text-rose-600 transition-all uppercase tracking-widest"
+              class="text-xs font-bold text-rose-400 hover:text-rose-600 transition-all uppercase tracking-widest"
             >
               Delete
             </button>
@@ -925,7 +925,7 @@ const handlePrint = async () => {
         <div class="flex items-center gap-4">
           <div class="text-right hidden md:block">
             <div
-              class="text-[0.55rem] font-black text-slate-400 uppercase tracking-widest mb-0.5"
+              class="text-xs font-black text-slate-400 uppercase tracking-widest mb-0.5"
             >
               Estimated Duration
             </div>
