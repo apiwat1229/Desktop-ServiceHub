@@ -10,6 +10,16 @@ const iconClass = computed(() => {
   return color?.colorClass || 'text-zinc-500';
 });
 
+const gradientStyle = computed(() => {
+  const color = themeStore.colors[themeStore.themeColor]?.primary || themeStore.colors.zinc.primary;
+  return {
+    backgroundImage: `
+      radial-gradient(circle at 15% 50%, hsl(${color} / 0.12), transparent 40%),
+      radial-gradient(circle at 85% 30%, hsl(${color} / 0.10), transparent 40%)
+    `,
+  };
+});
+
 const floatingIcons = [
   { icon: Shield, top: '10%', left: '8%', rotate: -15, size: 120, delay: 0 },
   { icon: Fingerprint, top: '12%', left: '88%', rotate: 20, size: 130, delay: 1 },
@@ -22,8 +32,11 @@ const floatingIcons = [
 
 <template>
   <div
-    class="fixed inset-0 z-[-1] bg-gray-50 dark:bg-zinc-950 overflow-hidden pointer-events-none transition-colors duration-300"
+    class="fixed inset-0 z-[0] bg-gray-50 dark:bg-zinc-950 overflow-hidden pointer-events-none transition-colors duration-300"
   >
+    <!-- Gradient Overlay -->
+    <div class="absolute inset-0 transition-opacity duration-500" :style="gradientStyle"></div>
+
     <div
       v-for="(item, index) in floatingIcons"
       :key="index"

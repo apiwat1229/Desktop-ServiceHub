@@ -18,6 +18,7 @@
 <body>
   <div id="app">
     <style>
+
       .initial-loader {
         position: fixed;
         inset: 0;
@@ -25,40 +26,88 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background-color: #0c0c0c;
-        /* Matches most dark themes */
-        color: #e2e2e2;
+        background-color: #f8fafc; /* Lighter background */
+        color: #1e293b;
         font-family: 'Bai Jamjuree', 'Inter', sans-serif;
         z-index: 9999;
       }
 
-      .spinner {
+      .logo-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 80px;
+        background: #ffffff;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.15), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
+        animation: bounce 2s infinite ease-in-out;
+      }
+
+      .logo-icon {
         width: 40px;
         height: 40px;
-        border: 3px solid rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        border-top-color: #3b82f6;
-        /* primary color */
-        animation: spin 1s ease-in-out infinite;
+        color: #3b82f6;
+      }
+
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+      }
+
+      .progress-container {
+        width: 140px;
+        height: 4px;
+        background-color: #e2e8f0;
+        border-radius: 99px;
+        overflow: hidden;
+        position: relative;
         margin-bottom: 1rem;
       }
 
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
+      .progress-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 30%;
+        background-color: #3b82f6;
+        border-radius: 99px;
+        animation: indeterminate 1.5s infinite ease-in-out;
+      }
+
+      @keyframes indeterminate {
+        0% { left: -30%; width: 30%; }
+        50% { left: 100%; width: 30%; }
+        100% { left: 100%; width: 30%; } 
+      }
+      
+      /* Smooth left-right specific animation if desired, but indeterminate is standard */
+      @keyframes loading-scan {
+         0% { left: -40%; }
+         50% { left: 20%; width: 60%; }
+         100% { left: 100%; width: 10%;}
       }
 
       .loading-text {
-        font-size: 0.875rem;
-        font-weight: 500;
-        letter-spacing: 0.025em;
-        opacity: 0.8;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: #64748b;
+        text-transform: uppercase;
       }
     </style>
     <div class="initial-loader">
-      <div class="spinner"></div>
-      <div class="loading-text">YTRC CONNECTING...</div>
+      <div class="logo-container">
+        <!-- Lucide Wrench Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="logo-icon"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar"></div>
+      </div>
+      <div class="loading-text">Service Hub</div>
     </div>
   </div>
   <script type="module" src="/src/main.ts"></script>

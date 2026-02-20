@@ -30,6 +30,13 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     minimize: () => ipcRenderer.send('window-minimize'),
     maximize: () => ipcRenderer.send('window-maximize'),
     close: () => ipcRenderer.send('window-close'),
+    reload: () => ipcRenderer.send('reload-window'),
+    forceReload: () => ipcRenderer.send('force-reload-window'),
+    toggleDevTools: () => ipcRenderer.send('toggle-devtools'),
+    zoomIn: () => ipcRenderer.send('zoom-in'),
+    zoomOut: () => ipcRenderer.send('zoom-out'),
+    zoomReset: () => ipcRenderer.send('zoom-reset'),
+    toggleFullscreen: () => ipcRenderer.send('toggle-fullscreen'),
   },
 
   // Auto-Update APIs

@@ -1,86 +1,71 @@
 <script setup lang="ts">
 import TicketDialog from '@/components/booking/TicketDialog.vue';
-import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import AppearanceSettings from '@/components/settings/AppearanceSettings.vue';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar/index';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { usePermissions } from '@/composables/usePermissions';
 import approvalsApi from '@/services/approvals';
 import { bookingsApi } from '@/services/bookings';
 import { notificationsApi } from '@/services/notifications';
 import { socketService } from '@/services/socket';
 import { useAuthStore } from '@/stores/auth';
-import { useSearchStore } from '@/stores/search';
 import type { NotificationDto } from '@my-app/types';
 import { formatDistanceToNow } from 'date-fns';
 import {
-  ArrowLeft,
-  ArrowRight,
-  Bell,
-  CheckCircle2,
-  LayoutDashboard,
-  LayoutGrid,
-  LogOut,
-  RotateCw,
-  Search,
-  Settings,
-  User,
-  X,
+    Bell,
+    LogOut,
+    Settings,
+    User
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue-sonner';
-import MobileSidebar from './MobileSidebar.vue';
+import NavigationMenubar from './NavigationMenubar.vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
-const route = useRoute();
 const showThemeSettings = ref(false);
 const isTicketPreviewOpen = ref(false);
 const previewTicket = ref<any>(null);
 const isErrorDialogOpen = ref(false);
 const errorDialogMessage = ref('');
 const isCloseConfirmOpen = ref(false);
+const isLogoutConfirmOpen = ref(false);
 
 const { isAdmin, hasPermission } = usePermissions();
 
-const searchStore = useSearchStore();
-
-const props = defineProps<{
-  showBrand?: boolean;
-}>();
-
-const isHome = computed(() => route.path === '/' || route.path === '/dashboard');
+const props = defineProps<{}>();
 
 const handleLogout = () => {
+  isLogoutConfirmOpen.value = true;
+};
+
+const confirmLogout = () => {
   authStore.logout();
   router.push('/login');
+  isLogoutConfirmOpen.value = false;
 };
 
 const userInitials = () => {
@@ -88,19 +73,13 @@ const userInitials = () => {
   return `${authStore.user.firstName.charAt(0)}${authStore.user.lastName ? authStore.user.lastName.charAt(0) : ''}`;
 };
 
-const pageTitle = computed(() => {
-  const name = route.name?.toString() || '';
-  if (name === 'Home') return 'Dashboard';
-  if (name === 'AdminDashboard') return 'Admin Panel';
-  if (name === 'ProjectTimeline') return t('services.projectTimeline.name');
-  return name;
-});
-
-const { t } = useI18n();
 
 // --- Notifications Logic ---
 const unreadNotifications = ref<NotificationDto[]>([]);
 const unreadCount = computed(() => unreadNotifications.value.length);
+
+const route = useRoute(); // Added this line
+const isGuestRoute = computed(() => route.meta.requiresGuest); // Added this line
 
 const pendingApprovalCount = ref(0);
 // let pollingInterval: NodeJS.Timeout;
@@ -138,9 +117,6 @@ const handleMarkAsRead = async (id: string) => {
   }
 };
 
-const handleViewAll = () => {
-  router.push('/my-notifications');
-};
 
 // Window Controls
 const handleMinimize = () => {
@@ -393,201 +369,155 @@ onUnmounted(() => {
 
 <template>
   <header
-    class="h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b border-border bg-card/80 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-50 draggable-region transition-all"
+    class="h-[calc(3rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b border-border bg-card/80 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-50 draggable-region transition-all"
   >
     <div class="flex items-center gap-6 no-drag">
-      <!-- Brand Section -->
-      <div
-        v-if="showBrand"
-        class="flex items-center gap-3 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-        @click="router.push('/')"
-      >
-        <div
-          class="p-1.5 rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-        >
-          <LayoutGrid class="w-4 h-4" />
-        </div>
-        <div class="hidden lg:block">
-          <h1 class="text-sm font-bold text-foreground tracking-tight leading-none uppercase">
-            ServiceHub
-          </h1>
-          <p class="text-[8px] font-bold text-primary tracking-wider">PAPERLESS REPAIR</p>
-        </div>
+
+      <!-- Horizontal Navigation Menubar -->
+      <div class="hidden md:flex items-center gap-4 no-drag" v-if="!isGuestRoute">
+        <NavigationMenubar />
+        <div class="h-4 w-[1px] bg-border/60 mx-2"></div>
+        <NavbarBreadcrumb />
       </div>
 
-      <div class="h-6 w-px bg-border/50 hidden lg:block" v-if="showBrand"></div>
-
-      <MobileSidebar />
-
-      <!-- Navigation Controls -->
-      <div class="flex items-center gap-1 bg-muted/30 p-1 rounded-lg">
-        <Button variant="ghost" size="icon" class="h-7 w-7" @click="router.back()" title="Back">
-          <ArrowLeft class="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          class="h-7 w-7"
-          @click="router.forward()"
-          title="Forward"
-        >
-          <ArrowRight class="w-3.5 h-3.5" />
-        </Button>
-        <Button variant="ghost" size="icon" class="h-7 w-7" @click="router.go(0)" title="Refresh">
-          <RotateCw class="w-3.5 h-3.5" />
-        </Button>
-      </div>
     </div>
 
-    <!-- Centered Search / Title -->
-    <div
-      class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-full max-w-[400px] px-4 no-drag"
-    >
-      <!-- Page Title -->
-      <span class="text-sm text-foreground font-semibold tracking-tight truncate px-4">
-        {{ pageTitle }}
-      </span>
-    </div>
-
-    <div class="flex items-center gap-4 no-drag">
-      <!-- Notifications -->
-      <DropdownMenu>
-        <DropdownMenuTrigger as-child>
-          <Button variant="ghost" size="icon" class="relative group">
-            <Bell
-              class="w-5 h-5 transition-transform duration-500 ease-in-out"
-              :class="{ 'animate-bell-ring text-primary': unreadCount > 0 }"
-            />
-            <span
-              v-if="unreadCount > 0"
-              class="absolute top-1 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[0.625rem] font-bold text-destructive-foreground animate-in zoom-in duration-300"
-            >
-              {{ unreadCount > 9 ? '9+' : unreadCount }}
-            </span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent class="w-80 p-0" align="end" side="bottom" :side-offset="8">
-          <div class="flex items-center justify-between p-4 border-b">
-            <h4 class="font-semibold leading-none">Notifications</h4>
-            <span class="text-xs text-muted-foreground" v-if="unreadCount > 0">
-              {{ unreadCount }} unread
-            </span>
-          </div>
-
-          <div class="max-h-[300px] overflow-y-auto">
-            <div v-if="unreadCount === 0" class="p-8 text-center text-muted-foreground">
-              <Bell class="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p class="text-sm">No new notifications</p>
-            </div>
-
-            <template v-else>
-              <DropdownMenuItem
-                v-for="notification in unreadNotifications.slice(0, 5)"
-                :key="notification.id"
-                class="flex flex-col items-start gap-1 p-3 cursor-pointer focus:bg-muted/50 border-b last:border-0"
-                @click="handleNotificationClick(notification)"
-              >
-                <div class="flex items-start justify-between w-full gap-2">
-                  <div class="flex items-center gap-2 flex-1 overflow-hidden">
-                    <div class="h-2 w-2 min-w-[8px] rounded-full bg-primary"></div>
-                    <span class="font-semibold text-sm line-clamp-1 break-all">{{
-                      notification.title
-                    }}</span>
-                  </div>
-                  <span
-                    class="text-[0.625rem] text-muted-foreground whitespace-nowrap flex-shrink-0"
-                  >
-                    {{ formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true }) }}
-                  </span>
-                </div>
-                <p class="text-xs text-muted-foreground line-clamp-2 pl-4">
-                  {{ notification.message }}
-                </p>
-              </DropdownMenuItem>
-            </template>
-          </div>
-
-          <div class="p-2 border-t bg-muted/20">
-            <Button variant="ghost" size="sm" class="w-full text-xs" @click="handleViewAll">
-              View all notifications
-            </Button>
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <!-- User Profile -->
-      <DropdownMenu>
-        <DropdownMenuTrigger as-child>
-          <Button variant="ghost" class="relative h-8 w-8 rounded-full">
-            <Avatar class="h-8 w-8 rounded-full">
-              <AvatarImage :src="authStore.userAvatarUrl" :alt="authStore.user?.username || ''" />
-              <AvatarFallback class="rounded-full">{{ userInitials() }}</AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent class="w-56" align="end" side="bottom" :side-offset="8">
-          <DropdownMenuLabel class="font-normal">
-            <div class="flex flex-col space-y-1">
-              <p class="text-sm font-medium leading-none">
-                {{ authStore.user?.displayName || authStore.user?.username }}
-              </p>
-              <p class="text-xs leading-none text-muted-foreground">
+    <div class="flex items-center gap-2 no-drag">
+      <!-- User Profile & Notifications -->
+      <!-- User Profile & Notifications -->
+      <Popover v-if="!isGuestRoute">
+        <PopoverTrigger as-child>
+          <Button variant="ghost" class="h-9 px-2 flex items-center gap-3 rounded-xl hover:bg-accent/50 transition-all no-drag relative group">
+            <div class="hidden sm:flex flex-col items-end leading-none gap-0.5 text-right">
+              <span class="text-xs font-bold text-foreground">
+                {{ authStore.user?.firstName }} {{ authStore.user?.lastName?.charAt(0) }}.
+              </span>
+              <span class="text-[9px] font-medium text-muted-foreground">
                 {{ authStore.user?.email }}
-              </p>
+              </span>
             </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            v-if="isAdmin || hasPermission('approvals:approve')"
-            @click="router.push('/approvals')"
-            class="justify-between"
-          >
-            <div class="flex items-center">
-              <CheckCircle2 class="mr-2 h-4 w-4" />
-              <span>{{ t('navbar.approvals') }}</span>
+            <div class="relative">
+              <Avatar class="h-8 w-8 rounded-full border border-border/40 shadow-sm shrink-0">
+                <AvatarImage :src="authStore.userAvatarUrl" :alt="authStore.user?.username || ''" />
+                <AvatarFallback class="rounded-full bg-primary/5 text-primary text-xs font-bold">{{ userInitials() }}</AvatarFallback>
+              </Avatar>
+              <!-- Consolidated Notification Badge -->
+              <span
+                v-if="unreadCount > 0"
+                class="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[0.5rem] font-bold text-destructive-foreground animate-in zoom-in duration-300 ring-2 ring-background"
+              >
+                {{ unreadCount > 9 ? '9+' : unreadCount }}
+              </span>
             </div>
-            <span
-              v-if="pendingApprovalCount > 0"
-              class="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-100 px-1 text-xs font-bold text-red-600"
-            >
-              {{ pendingApprovalCount > 99 ? '99+' : pendingApprovalCount }}
-            </span>
-          </DropdownMenuItem>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent class="w-80 sm:w-96 p-0 border-none shadow-2xl rounded-[10px]" align="end" side="bottom" :side-offset="8">
+          
+          <!-- User Info Header -->
+          <div class="flex items-center gap-4 p-4">
+            <div class="relative">
+              <Avatar class="h-10 w-10 rounded-full border border-border shadow-sm">
+                <AvatarImage :src="authStore.userAvatarUrl" :alt="authStore.user?.username || ''" />
+                <AvatarFallback class="rounded-full bg-primary/10 text-primary text-sm font-bold">{{ userInitials() }}</AvatarFallback>
+              </Avatar>
+              <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-white dark:border-card"></div>
+            </div>
+            <div class="flex flex-col flex-1 min-w-0">
+               <span class="text-sm font-bold text-foreground truncate">
+                {{ authStore.user?.firstName }} {{ authStore.user?.lastName?.charAt(0) }}.
+              </span>
+              <span class="text-[10px] text-muted-foreground truncate">
+                {{ authStore.user?.email }}
+              </span>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                class="h-8 w-8 hover:bg-muted rounded-full" 
+                @click="router.push('/profile')"
+                title="Profile"
+              >
+                <User class="w-4 h-4 text-muted-foreground" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                class="h-8 w-8 hover:bg-muted rounded-full" 
+                @click="showThemeSettings = true"
+                title="Theme Settings"
+              >
+                <Settings class="w-4 h-4 text-muted-foreground" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                class="h-8 w-8 hover:bg-red-50 hover:text-red-600 rounded-full" 
+                @click="handleLogout"
+                title="Sign Out"
+              >
+                <LogOut class="w-4 h-4 text-red-500" />
+              </Button>
+            </div>
+          </div>
 
-          <DropdownMenuItem
-            v-if="isAdmin"
-            @click="
-              () => {
-                console.log('[Navbar] Navigating to AdminDashboard');
-                router.push({ name: 'AdminDashboard' });
-              }
-            "
-          >
-            <LayoutDashboard class="mr-2 h-4 w-4" />
-            <span>{{ t('navbar.adminPanel') }}</span>
-          </DropdownMenuItem>
+          <div class="px-4 pb-4 pt-2">
+            <div class="bg-white dark:bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm">
+              <!-- Recent Alerts Header -->
+              <div class="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-muted/20">
+                <div class="flex items-center gap-2">
+                    <Bell class="w-4 h-4 text-muted-foreground" />
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-muted-foreground">RECENT ALERTS</h4>
+                </div>
+                <div v-if="unreadCount > 0" class="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                    {{ unreadCount }}
+                </div>
+              </div>
 
-          <DropdownMenuItem @click="router.push('/profile')">
-            <User class="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </DropdownMenuItem>
+              <!-- Alerts List -->
+              <div class="divide-y divide-border/40 max-h-[400px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+                <div v-if="unreadNotifications.length === 0" class="py-12 text-center text-muted-foreground">
+                    <p class="text-xs">No new notifications</p>
+                </div>
+                
+                <template v-else>
+                    <div
+                    v-for="notification in unreadNotifications"
+                    :key="notification.id"
+                    class="group flex flex-col gap-1 p-4 hover:bg-muted/30 cursor-pointer transition-colors"
+                    @click="handleNotificationClick(notification)"
+                    >
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <span class="text-sm font-bold text-foreground line-clamp-1 italic group-hover:text-primary transition-colors">
+                            {{ notification.title }}
+                            </span>
+                            <span class="text-[10px] text-muted-foreground whitespace-nowrap">
+                            {{ formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true }) }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-muted-foreground line-clamp-2 leading-relaxed font-light">
+                            {{ notification.message }}
+                        </p>
+                    </div>
+                </template>
+              </div>
 
-          <DropdownMenuItem @click="showThemeSettings = true">
-            <Settings class="mr-2 h-4 w-4" />
-            <span>Theme Settings</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem @click="handleLogout" class="text-red-600 focus:text-red-600">
-            <LogOut class="mr-2 h-4 w-4" />
-            <span>Log out</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+              <!-- View All Button -->
+              <div class="p-2 bg-muted/20">
+                <Button variant="ghost" class="w-full h-9 text-[11px] font-bold text-primary hover:text-primary/80 uppercase tracking-widest" @click="router.push('/my-notifications')">
+                    View All Notifications
+                </Button>
+              </div>
+            </div>
+          </div>
+
+        </PopoverContent>
+      </Popover>
 
       <!-- Window Controls -->
-      <div class="flex items-center gap-1 border-l pl-2 ml-2">
-        <LanguageSwitcher />
+      <div class="flex items-center gap-1">
         <Button
           variant="ghost"
           size="icon"
@@ -667,7 +597,7 @@ onUnmounted(() => {
     </div>
     <!-- Theme Settings Dialog -->
     <Dialog v-model:open="showThemeSettings">
-      <DialogContent class="sm:max-w-[425px]">
+      <DialogContent class="sm:max-w-[425px] max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
         <DialogHeader>
           <DialogTitle>Theme Settings</DialogTitle>
           <DialogDescription>Customize the appearance of the application.</DialogDescription>
@@ -708,6 +638,21 @@ onUnmounted(() => {
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction @click="confirmClose">Close</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    <!-- Logout Confirmation Dialog -->
+    <AlertDialog v-model:open="isLogoutConfirmOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Sign Out?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to sign out of the system?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction @click="confirmLogout" class="bg-red-600 hover:bg-red-700 text-white">Sign Out</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

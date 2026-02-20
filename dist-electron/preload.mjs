@@ -26,7 +26,14 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   window: {
     minimize: () => electron.ipcRenderer.send("window-minimize"),
     maximize: () => electron.ipcRenderer.send("window-maximize"),
-    close: () => electron.ipcRenderer.send("window-close")
+    close: () => electron.ipcRenderer.send("window-close"),
+    reload: () => electron.ipcRenderer.send("reload-window"),
+    forceReload: () => electron.ipcRenderer.send("force-reload-window"),
+    toggleDevTools: () => electron.ipcRenderer.send("toggle-devtools"),
+    zoomIn: () => electron.ipcRenderer.send("zoom-in"),
+    zoomOut: () => electron.ipcRenderer.send("zoom-out"),
+    zoomReset: () => electron.ipcRenderer.send("zoom-reset"),
+    toggleFullscreen: () => electron.ipcRenderer.send("toggle-fullscreen")
   },
   // Auto-Update APIs
   autoUpdate: {

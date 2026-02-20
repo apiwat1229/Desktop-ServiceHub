@@ -1,6 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import Home from '../views/Home.vue';
 import Login from '../views/Login.vue';
 
 const routes = [
@@ -16,8 +15,8 @@ const routes = [
         children: [
             {
                 path: '',
-                name: 'Dashboard', // Changed from Home to Dashboard to match Sidebar
-                component: Home,
+                name: 'Dashboard',
+                component: () => import('../views/admin/Dashboard.vue'),
             },
             {
                 path: 'queue',
@@ -34,11 +33,7 @@ const routes = [
                 name: 'Users',
                 component: () => import('../views/Placeholder.vue'),
             },
-            {
-                path: 'settings',
-                name: 'Settings',
-                component: () => import('../views/Placeholder.vue'),
-            },
+
             {
                 path: 'my-notifications',
                 name: 'MyNotifications',
@@ -49,11 +44,7 @@ const routes = [
                 name: 'Profile',
                 component: () => import('../views/Profile.vue'),
             },
-            {
-                path: 'bookings',
-                name: 'Booking Queue',
-                component: () => import('../views/admin/BookingQueue.vue'),
-            },
+
         ]
     },
     {
@@ -77,40 +68,26 @@ const routes = [
 
     {
         path: '/admin',
-        name: 'AdminPanel',
         component: () => import('@/components/layout/MainLayout.vue'),
         meta: { requiresAuth: true },
         children: [
             {
                 path: '',
-                name: 'AdminDashboard',
-                component: () => import('../views/admin/Dashboard.vue'),
+                redirect: '/',
             },
             {
                 path: 'system-status',
-                name: 'SystemStatus',
-                component: () => import('../views/admin/SystemStatus.vue'),
+                redirect: { path: '/admin/settings', query: { tab: 'system-status' } },
             },
             {
                 path: 'roles',
-                name: 'Roles',
-                component: () => import('../views/admin/Roles.vue'),
+                redirect: { path: '/admin/settings', query: { tab: 'roles' } },
             },
             {
                 path: 'users',
-                name: 'Users Management',
-                component: () => import('../views/admin/UsersManagement.vue'),
+                redirect: { path: '/admin/settings', query: { tab: 'users' } },
             },
-            {
-                path: 'suppliers',
-                name: 'Suppliers',
-                component: () => import('../views/admin/Suppliers.vue'),
-            },
-            {
-                path: 'rubber-types',
-                name: 'Rubber Types',
-                component: () => import('../views/admin/RubberTypes.vue'),
-            },
+
             {
                 path: 'notifications',
                 name: 'Notifications',
@@ -121,45 +98,92 @@ const routes = [
                 name: 'Purchasing',
                 component: () => import('../views/Placeholder.vue'),
             },
-            {
-                path: 'cuplump/:id',
-                name: 'CuplumpDetail',
-                component: () => import('../views/admin/CuplumpDetail.vue'),
-            },
-            {
-                path: 'uss',
-                name: 'USS',
-                component: () => import('../views/admin/Uss.vue'),
-            },
-            {
-                path: 'qa',
-                name: 'Quality Assurance',
-                component: () => import('../views/admin/QualityAssurance.vue'),
-            },
-            {
-                path: 'production',
-                name: 'Production',
-                component: () => import('../views/admin/Production.vue'),
-            },
-            {
-                path: 'uss/:id',
-                name: 'UssDetail',
-                component: () => import('../views/admin/UssDetail.vue'),
-            },
 
-            {
-                path: 'bookings',
-                redirect: '/bookings',
-            },
             {
                 path: 'analytics',
                 name: 'Analytics',
                 component: () => import('../views/Placeholder.vue'),
             },
             {
+                path: 'settings',
+                name: 'Settings',
+                component: () => import('../views/Settings.vue'),
+            },
+            {
                 path: 'helpdesk',
-                name: 'Help Desk',
-                component: () => import('../views/admin/HelpDesk.vue'),
+                component: () => import('../views/admin/it-helpdesk/Layout.vue'),
+                children: [
+                    {
+                        path: '',
+                        redirect: '/admin/helpdesk/overview'
+                    },
+                    {
+                        path: 'overview',
+                        name: 'Help Desk Overview',
+                        component: () => import('../views/admin/it-helpdesk/Overview.vue'),
+                        meta: {
+                            breadcrumbs: [
+                                { label: 'IT Help Desk', to: '/admin/helpdesk' },
+                                { label: 'Overview' }
+                            ]
+                        }
+                    },
+                    {
+                        path: 'tickets',
+                        name: 'Help Desk Tickets',
+                        component: () => import('../views/admin/it-helpdesk/TicketList.vue'),
+                        meta: {
+                            breadcrumbs: [
+                                { label: 'IT Help Desk', to: '/admin/helpdesk' },
+                                { label: 'Tickets' }
+                            ]
+                        }
+                    },
+                    {
+                        path: 'kb',
+                        name: 'Knowledge Base',
+                        component: () => import('../views/admin/it-helpdesk/KnowledgeBase.vue'),
+                        meta: {
+                            breadcrumbs: [
+                                { label: 'IT Help Desk', to: '/admin/helpdesk' },
+                                { label: 'Knowledge Base' }
+                            ]
+                        }
+                    },
+                    {
+                        path: 'inventory',
+                        name: 'IT Inventory',
+                        component: () => import('../views/admin/it-helpdesk/Inventory.vue'),
+                        meta: {
+                            breadcrumbs: [
+                                { label: 'IT Help Desk', to: '/admin/helpdesk' },
+                                { label: 'Inventory' }
+                            ]
+                        }
+                    },
+                    {
+                        path: 'asset-requests',
+                        name: 'Asset Requests',
+                        component: () => import('../views/admin/it-helpdesk/AssetRequests.vue'),
+                        meta: {
+                            breadcrumbs: [
+                                { label: 'IT Help Desk', to: '/admin/helpdesk' },
+                                { label: 'Asset Requests' }
+                            ]
+                        }
+                    },
+                    {
+                        path: 'analytics',
+                        name: 'Help Desk Analytics',
+                        component: () => import('../views/admin/it-helpdesk/Analytics.vue'),
+                        meta: {
+                            breadcrumbs: [
+                                { label: 'IT Help Desk', to: '/admin/helpdesk' },
+                                { label: 'Analytics' }
+                            ]
+                        }
+                    }
+                ]
             },
         ]
     },
@@ -190,30 +214,8 @@ const routes = [
         name: 'Error',
         component: () => import('../views/Error.vue'),
     },
-    {
-        path: '/scale',
-        component: () => import('@/components/layout/MainLayout.vue'),
-        meta: { requiresAuth: true },
-        children: [
-            {
-                path: '',
-                name: 'TruckScale',
-                component: () => import('../views/admin/TruckScale.vue'),
-            }
-        ]
-    },
-    {
-        path: '/cuplump-pool',
-        component: () => import('@/components/layout/MainLayout.vue'),
-        meta: { requiresAuth: true },
-        children: [
-            {
-                path: '',
-                name: 'Cuplump Pool',
-                component: () => import('../views/admin/CuplumpPoolManagement.vue'),
-            }
-        ]
-    },
+
+
     {
         path: '/my-machine',
         component: () => import('@/components/layout/MainLayout.vue'),
@@ -254,18 +256,7 @@ const routes = [
         ]
     },
 
-    {
-        path: '/admin/receiving',
-        component: () => import('@/components/layout/NavbarOnlyLayout.vue'),
-        meta: { requiresAuth: true },
-        children: [
-            {
-                path: '',
-                name: 'Raw Material Receiving',
-                component: () => import('../views/admin/Receiving.vue'),
-            },
-        ]
-    },
+
     {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',

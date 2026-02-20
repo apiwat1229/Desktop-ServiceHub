@@ -1,115 +1,101 @@
 <template>
   <div class="p-6 max-w-screen-2xl mx-auto space-y-8">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight text-slate-900">
-          {{ t('admin.systemStatus.title') }}
-        </h1>
-        <p class="text-slate-500 mt-1 text-lg">
-          {{ t('admin.systemStatus.subtitle') }}
-        </p>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-medium text-slate-400 mr-2">v{{ appVersion }}</span>
-        <Button variant="outline" @click="fetchStatus" :disabled="loading" class="h-10 px-4">
-          <RefreshCw :class="['w-4 h-4 mr-2', loading && 'animate-spin']" />
-          {{ t('admin.systemStatus.refresh') }}
+    <!-- Consolidated System Health Card -->
+    <Card class="border-none shadow-md bg-white/80 backdrop-blur-sm overflow-hidden relative"> <!-- Added relative for absolute positioning of controls if needed, or we just put them in the layout -->
+      
+      <!-- Top Right Controls (Version & Refresh) - Positioned absolutely or flexed -->
+      <div class="absolute top-4 right-4 flex items-center gap-3 z-10">
+        <span class="text-[10px] font-black font-mono text-slate-300/80 tracking-widest uppercase">v{{ appVersion }}</span>
+        <Button variant="ghost" size="icon" @click="fetchStatus" :disabled="loading" class="h-8 w-8 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors">
+          <RefreshCw :class="['w-4 h-4', loading && 'animate-spin']" />
+          <span class="sr-only">{{ t('admin.systemStatus.refresh') }}</span>
         </Button>
       </div>
-    </div>
 
-    <!-- Overall Status Banner -->
-    <div
-      class="rounded-xl border bg-white p-6 shadow-sm flex items-center gap-5 transition-all duration-300"
-      :class="
-        status === 'ok' ? 'border-emerald-100 bg-emerald-50/10' : 'border-rose-100 bg-rose-50/10'
-      "
-    >
-      <div
-        class="flex h-16 w-16 items-center justify-center rounded-full shadow-sm"
-        :class="status === 'ok' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'"
-      >
-        <CheckCircle2 v-if="status === 'ok'" class="h-8 w-8" />
-        <AlertTriangle v-else class="h-8 w-8" />
+      <div class="flex flex-col md:flex-row">
+        <!-- Status Section (Left) -->
+        <div 
+          class="p-8 md:w-1/3 flex flex-col justify-center items-center text-center space-y-4 border-b md:border-b-0 md:border-r border-slate-100 relative"
+          :class="status === 'ok' ? 'bg-emerald-50/30' : 'bg-rose-50/30'"
+        >
+          <div
+            class="flex h-20 w-20 items-center justify-center rounded-full shadow-sm transition-all duration-500"
+            :class="status === 'ok' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'"
+          >
+            <CheckCircle2 v-if="status === 'ok'" class="h-10 w-10" />
+            <AlertTriangle v-else class="h-10 w-10" />
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-slate-900">
+              {{
+                status === 'ok'
+                  ? t('admin.systemStatus.allSystemsOperational')
+                  : t('admin.systemStatus.systemIssues')
+              }}
+            </h2>
+            <p class="text-slate-500 font-medium">
+              {{
+                status === 'ok'
+                  ? 'All services are functioning normally.'
+                  : 'Some systems are experiencing performance degradation.'
+              }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Metrics Grid (Right) -->
+        <div class="p-8 md:w-2/3 grid grid-cols-1 md:grid-cols-3 gap-8 items-center pt-12 md:pt-8"> <!-- Added padding top to avoid overlap with controls on mobile if stacked, or adjust as needed -->
+            <!-- Uptime -->
+            <div class="space-y-2 text-center md:text-left">
+                <div class="flex items-center justify-center md:justify-start gap-2 text-sm font-medium text-slate-500 uppercase tracking-wider">
+                    <Timer class="h-4 w-4" />
+                    {{ t('admin.systemStatus.uptime') }}
+                </div>
+                <div class="text-3xl font-black text-slate-900 tracking-tight">
+                    {{
+                    typeof uptime === 'string'
+                        ? uptime
+                        : uptime
+                        ? formatUptimeShort(uptime as number)
+                        : '-'
+                    }}
+                </div>
+                 <p class="text-xs text-emerald-600 font-bold bg-emerald-50 inline-block px-2 py-1 rounded-full">
+                    Updated just now
+                 </p>
+            </div>
+
+            <!-- Response Time -->
+            <div class="space-y-2 text-center md:text-left">
+                <div class="flex items-center justify-center md:justify-start gap-2 text-sm font-medium text-slate-500 uppercase tracking-wider">
+                    <Zap class="h-4 w-4" />
+                    {{ t('admin.systemStatus.responseTime') }}
+                </div>
+                <div class="text-3xl font-black text-slate-900 tracking-tight flex items-baseline justify-center md:justify-start gap-1">
+                    {{ responseTime ? responseTime.toFixed(0) : '-' }}
+                    <span class="text-base font-medium text-slate-400">ms</span>
+                </div>
+                <p :class="['text-xs font-bold px-2 py-1 rounded-full inline-block', getLatencyColor(responseTime).replace('text-', 'bg-').replace('600', '100') + ' ' + getLatencyColor(responseTime)]">
+                    {{ getLatencyStatus(responseTime) }}
+                </p>
+            </div>
+
+            <!-- Last Checked -->
+            <div class="space-y-2 text-center md:text-left">
+                <div class="flex items-center justify-center md:justify-start gap-2 text-sm font-medium text-slate-500 uppercase tracking-wider">
+                    <Clock class="h-4 w-4" />
+                    {{ t('admin.systemStatus.lastChecked') }}
+                </div>
+                <div class="text-3xl font-black text-slate-900 tracking-tight">
+                    {{ lastChecked ? formatTimeRaw(lastChecked) : '-' }}
+                </div>
+                <p class="text-xs text-slate-400 font-medium">
+                    Next check in {{ pollInterval / 1000 }}s
+                </p>
+            </div>
+        </div>
       </div>
-      <div class="space-y-1">
-        <h2 class="text-2xl font-semibold tracking-tight text-slate-900">
-          {{
-            status === 'ok'
-              ? t('admin.systemStatus.allSystemsOperational')
-              : t('admin.systemStatus.systemIssues')
-          }}
-        </h2>
-        <p class="text-slate-500">
-          {{
-            status === 'ok'
-              ? 'All services are functioning normally.'
-              : 'Some systems are experiencing performance degradation.'
-          }}
-        </p>
-      </div>
-    </div>
-
-    <!-- Metrics Grid -->
-    <div class="grid gap-6 md:grid-cols-3">
-      <!-- Uptime -->
-      <Card class="bg-white shadow-sm border-slate-200">
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium text-slate-500">
-            {{ t('admin.systemStatus.uptime') }}
-          </CardTitle>
-          <Timer class="h-4 w-4 text-emerald-500" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold text-slate-900">
-            {{
-              typeof uptime === 'string'
-                ? uptime
-                : uptime
-                  ? formatUptimeShort(uptime as number)
-                  : '-'
-            }}
-          </div>
-          <p class="text-xs text-emerald-600 mt-1 font-medium">Updated just now</p>
-        </CardContent>
-      </Card>
-
-      <!-- Response Time -->
-      <Card class="bg-white shadow-sm border-slate-200">
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium text-slate-500">
-            {{ t('admin.systemStatus.responseTime') }}
-          </CardTitle>
-          <Zap class="h-4 w-4 text-amber-500" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold text-slate-900">
-            {{ responseTime ? responseTime.toFixed(0) : '-' }}
-            <span class="text-sm font-normal text-slate-400">ms</span>
-          </div>
-          <p :class="['text-xs mt-1 font-medium', getLatencyColor(responseTime)]">
-            {{ getLatencyStatus(responseTime) }}
-          </p>
-        </CardContent>
-      </Card>
-
-      <!-- Last Checked -->
-      <Card class="bg-white shadow-sm border-slate-200">
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium text-slate-500">
-            {{ t('admin.systemStatus.lastChecked') }}
-          </CardTitle>
-          <Clock class="h-4 w-4 text-blue-500" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold text-slate-900">
-            {{ lastChecked ? formatTimeRaw(lastChecked) : '-' }}
-          </div>
-          <p class="text-xs text-slate-500 mt-1">Next check in {{ pollInterval / 1000 }}s</p>
-        </CardContent>
-      </Card>
-    </div>
+    </Card>
 
     <div class="grid gap-6 md:grid-cols-2">
       <!-- System Services -->
@@ -264,21 +250,68 @@
         </CardContent>
       </Card>
     </div>
+
+    <!-- Platform Info Section -->
+    <div class="space-y-8">
+      <Card class="border-none shadow-2xl shadow-black/5 rounded-[10px] overflow-hidden">
+        <CardHeader class="bg-primary text-primary-foreground py-10 px-10 relative overflow-hidden">
+          <div class="relative z-10 space-y-2">
+            <Badge variant="secondary" class="bg-white/20 text-white border-none rounded-lg text-[10px] font-black uppercase tracking-widest px-3 py-1">BUILD INFO</Badge>
+            <CardTitle class="text-3xl font-black tracking-tight">YTRC Service Hub</CardTitle>
+            <CardDescription class="text-primary-foreground/70 font-bold uppercase tracking-widest text-[10px]">Paperless Repair & Service Management Architecture</CardDescription>
+          </div>
+          <!-- Abstract Background -->
+          <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+          <div class="absolute right-20 top-0 w-20 h-20 bg-black/5 rounded-full blur-xl"></div>
+        </CardHeader>
+        <CardContent class="p-10 space-y-10">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div v-for="info in [
+              { label: 'Platform Version', value: 'V1.1.12', icon: Globe, color: 'text-blue-500' },
+              { label: 'System Engine', value: 'Nexus v4.0', icon: Database, color: 'text-amber-500' },
+              { label: 'Security Level', value: 'RSA 4096', icon: Shield, color: 'text-emerald-500' },
+              { label: 'Deploy ID', value: 'YTRC-8821', icon: Fingerprint, color: 'text-indigo-500' }
+            ]" :key="info.label" class="p-6 rounded-[10px] bg-muted/30 border border-border/40 hover:border-primary/20 hover:bg-muted/50 transition-all group">
+              <component :is="info.icon" :class="['w-5 h-5 mb-4 group-hover:scale-110 transition-transform', info.color]" />
+              <span class="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest block mb-1">{{ info.label }}</span>
+              <p class="text-lg font-black tracking-tight">{{ info.value }}</p>
+            </div>
+          </div>
+
+          <div class="p-8 rounded-[10px] bg-gradient-to-br from-muted/50 to-muted/20 border border-border/40 space-y-4">
+            <h4 class="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+              <Shield class="w-4 h-4 text-primary" />
+              Legal & Compliance
+            </h4>
+            <p class="text-sm font-medium text-muted-foreground leading-relaxed">
+              Licensed to <strong>YTRC CENTER</strong>. All rights reserved. 
+              This platform is optimized for industrial service management and high-concurrency repair ticketing. 
+              Redistribution or unauthorized access is strictly prohibited under the system service agreement.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  History,
-  RefreshCw,
-  Server,
-  Timer,
-  Zap,
+    AlertTriangle,
+    CheckCircle2,
+    Clock,
+    Database,
+    Fingerprint,
+    Globe,
+    History,
+    RefreshCw,
+    Server,
+    Shield,
+    Timer,
+    Zap
 } from 'lucide-vue-next';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

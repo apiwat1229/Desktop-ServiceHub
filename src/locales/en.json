@@ -1035,84 +1035,22 @@
         "saveSuccess": "Saved successfully"
       }
     },
-    "printer": {
-      "title": "Printer Usage Analytics",
-      "subtitle": "Analyze data from printer log CSV files",
-      "uploadTitle": "Upload CSV File",
-      "uploadDesc": "Supports .csv files (Encoding: UTF-8)",
-      "emptyState": "Please upload a CSV file to start analysis",
-      "emptyStateDesc": "The system will process CopyBW, CopyColor, PrintBW, PrintColor, and TotalMeter",
-      "processing": "Processing CSV",
-      "uploadError": "Failed to parse CSV file",
-      "invalidFile": "Invalid CSV file or empty content",
-      "invalidDateForm": "Could not detect valid date/period from CSV",
-      "stats": {
-        "totalUsers": "Total Users",
-        "totalDepts": "Total Departments",
-        "grandTotal": "Grand Total Usage",
-        "printBW": "Total Print B&W",
-        "printColor": "Total Print Color",
-        "copyBW": "Total Copy B&W",
-        "copyColor": "Total Copy Color"
-      },
-      "charts": {
-        "topUsers": "Top 10 High Usage Users",
-        "usageType": "Usage Type Breakdown",
-        "usageByDept": "Usage by Department",
-        "labels": {
-          "printBW": "Print B&W",
-          "printColor": "Print Color",
-          "copyBW": "Copy B&W",
-          "copyColor": "Copy Color",
-          "totalUsage": "Total Usage (Pages)"
-        }
-      },
-      "history": {
-        "title": "Monthly Usage History",
-        "comparison": "Comparison with Previous Month",
-        "saveSuccess": "Monthly records saved successfully!",
-        "saveError": "Failed to save monthly records.",
-        "saveBtn": "Save to Database"
-      },
-      "settings": {
-        "title": "Printer Analytics Settings",
-        "deptManagement": "Department Management",
-        "userMapping": "User to Department Mapping",
-        "addDept": "Add Department",
-        "editDept": "Edit Department",
-        "deleteDept": "Delete Department",
-        "deptName": "Department Name",
-        "description": "Description",
-        "mappingDesc": "Map usernames found in printer logs to specific departments for accurate aggregation.",
-        "saveMapping": "Save Mapping",
-        "mappingSuccess": "Mapping saved successfully!",
-        "mappingError": "Failed to save mapping."
-      },
-      "table": {
-        "title": "Individual Usage Details",
-        "search": "Search username...",
-        "userName": "Username",
-        "department": "Department",
-        "total": "Total",
-        "noData": "No data found",
-        "rowsPerPage": "Rows per page",
-        "page": "Page",
-        "selectDept": "Select Dept",
-        "filterDept": "Filter by Dept",
-        "allDepts": "All Departments"
-      },
-      "departments": {
-        "it": "Information Technology",
-        "hr": "Human Resources",
-        "acc": "Accounting",
-        "production": "Production",
-        "sales": "Sales",
-        "mkt": "Marketing",
-        "mng": "Management",
-        "other": "Other"
-      }
-    },
+
     "itHelp": {
+      "columns": {
+        "title": "Title",
+        "priority": "Priority",
+        "status": "Status",
+        "category": "Category",
+        "assignee": "Assignee",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "ticket": {
+        "newBtn": "New Ticket",
+        "newTitle": "New Support Request",
+        "subtitle": "Submit a new ticket to IT support"
+      },
       "name": "IT Help Desk",
       "description": "Technical Support ticketing and asset management.",
       "subtitle": "Submit tickets, browse knowledge base, or manage assets.",
@@ -1507,7 +1445,10 @@
       "roles": "Roles & Permissions",
       "bookingQueue": "Booking Queue",
       "truckScale": "Truck Scale",
-      "receiving": "Raw Material Receiving"
+      "receiving": "Raw Material Receiving",
+      "settings": "Settings",
+      "systemStatus": "System Status",
+      "platformInfo": "Platform Info"
     },
     "userProfile": {
       "title": "User Profile",

@@ -145,6 +145,39 @@ ipcMain.on('window-close', () => {
   win?.close();
 });
 
+// System Controls
+ipcMain.on('reload-window', () => {
+  win?.webContents.reload();
+});
+
+ipcMain.on('force-reload-window', () => {
+  win?.webContents.reloadIgnoringCache();
+});
+
+ipcMain.on('toggle-devtools', () => {
+  win?.webContents.toggleDevTools();
+});
+
+ipcMain.on('zoom-in', () => {
+  const currentZoom = win?.webContents.getZoomLevel() || 0;
+  win?.webContents.setZoomLevel(currentZoom + 0.5);
+});
+
+ipcMain.on('zoom-out', () => {
+  const currentZoom = win?.webContents.getZoomLevel() || 0;
+  win?.webContents.setZoomLevel(currentZoom - 0.5);
+});
+
+ipcMain.on('zoom-reset', () => {
+  win?.webContents.setZoomLevel(0);
+});
+
+ipcMain.on('toggle-fullscreen', () => {
+  if (win) {
+    win.setFullScreen(!win.isFullScreen());
+  }
+});
+
 // Print Handler
 ipcMain.on('print-window', (event) => {
   const window = BrowserWindow.fromWebContents(event.sender);

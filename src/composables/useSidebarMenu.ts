@@ -57,33 +57,25 @@ export function useSidebarMenu() {
                     icon: Headset,
                     permission: 'helpdesk:read',
                     children: [
-                        { name: t('services.itHelp.tabs.overview'), path: '/admin/helpdesk?tab=overview', icon: LayoutDashboard },
-                        { name: t('services.itHelp.tabs.kb'), path: '/admin/helpdesk?tab=kb', icon: BookOpen },
-                        { name: t('services.itHelp.tabs.tickets'), path: '/admin/helpdesk?tab=tickets', icon: FileText },
-                        { name: t('services.itHelp.tabs.reports'), path: '/admin/helpdesk?tab=reports', icon: BarChart3 },
-                        { name: t('services.itHelp.tabs.assetRequests'), path: '/admin/helpdesk?tab=asset-requests', icon: Monitor },
-                        { name: t('services.itHelp.tabs.stock'), path: '/admin/helpdesk?tab=stock', icon: Package },
-                        { name: t('services.itHelp.tabs.analytics'), path: '/admin/helpdesk?tab=analytics', icon: BarChart3 },
+                        { name: t('services.itHelp.tabs.overview'), path: '/admin/helpdesk/overview', icon: LayoutDashboard },
+                        { name: t('services.itHelp.tabs.tickets'), path: '/admin/helpdesk/tickets', icon: FileText },
+                        { name: t('services.itHelp.tabs.kb'), path: '/admin/helpdesk/kb', icon: BookOpen },
+                        { name: t('services.itHelp.tabs.stock'), path: '/admin/helpdesk/inventory', icon: Package },
+                        { name: t('services.itHelp.tabs.assetRequests'), path: '/admin/helpdesk/asset-requests', icon: Monitor },
+                        { name: t('services.itHelp.tabs.analytics'), path: '/admin/helpdesk/analytics', icon: BarChart3 },
                     ]
                 },
-            ],
-        },
-        {
-            title: t('admin.sidebar.system'),
-            items: [
                 {
-                    name: t('admin.sidebar.roles'),
-                    path: '/admin/roles',
-                    icon: Shield,
-                    permission: 'roles:read',
+                    name: t('admin.sidebar.settings'),
+                    path: '/admin/settings',
+                    icon: Settings,
+                    children: [
+                        { name: t('admin.sidebar.roles'), path: '/admin/settings?tab=roles', icon: Shield },
+                        { name: t('admin.sidebar.users'), path: '/admin/settings?tab=users', icon: Users },
+                        { name: t('admin.sidebar.systemStatus'), path: '/admin/settings?tab=system-status', icon: Server },
+
+                    ]
                 },
-                {
-                    name: t('admin.sidebar.users'),
-                    path: '/admin/users',
-                    icon: Users,
-                    permission: 'users:read',
-                },
-                { name: t('admin.systemStatus.title'), path: '/admin/system-status', icon: Server },
             ],
         },
     ]);
