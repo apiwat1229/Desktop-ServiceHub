@@ -163,6 +163,70 @@ const handleSaveProfile = async () => {
   }
 };
 
+const handleSaveSignature = async () => {
+  if (!formData.value.signatureText || !formData.value.signatureStyle) {
+    toast.error('Please provide a signature name and select a style.');
+    return;
+  }
+
+  if (!authStore.user?.employeeId) {
+    toast.error('Please set your Employee ID in your profile first.');
+    return;
+  }
+
+  isLoading.value = true;
+  try {
+    // Generate Base64 from Canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = 800;
+    canvas.height = 200;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Could not initialize canvas context');
+
+    // Fill background with transparent
+    ctx.fillStyle = 'transparent';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Get the chosen font family correctly mapped
+    const fontInfo = signatureFonts.find(f => f.name === formData.value.signatureStyle);
+    const fontFamily = fontInfo?.family.split(',')[0].replace(/['"]/g, '') || formData.value.signatureStyle;
+
+    // Wait for the font to load to ensure it renders correctly on canvas
+    await document.fonts.load(`80px "${fontFamily}"`);
+
+    // Draw text
+    ctx.font = `80px "${fontFamily}"`;
+    ctx.fillStyle = '#1e293b'; // slate-800
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(formData.value.signatureText, canvas.width / 2, canvas.height / 2);
+
+    const base64Signature = canvas.toDataURL('image/png');
+
+    // Save style to user profile for future editing reference
+    await api.patch(`/users/${authStore.user?.id}`, {
+      signatureText: formData.value.signatureText,
+      signatureStyle: formData.value.signatureStyle,
+    });
+    
+    // Post to e-signatures backend
+    await api.post('/e-signatures', {
+      employeeId: authStore.user.employeeId,
+      signature: base64Signature,
+      status: true
+    });
+
+    await authStore.fetchUser();
+    toast.success('E-Signature saved successfully');
+    showSignatureDialog.value = false;
+  } catch (error) {
+    console.error(error);
+    toast.error('Failed to save E-Signature');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 const handleUploadPhoto = () => {
   fileInput.value?.click();
 };
@@ -242,7 +306,7 @@ const uploadCroppedImage = async () => {
 </script>
 
 <template>
-  <div class="container max-w-[1400px] py-10 space-y-6 animate-in fade-in duration-500">
+  <div class="container max-w-[1400px] pt-4 pb-10 space-y-4 animate-in fade-in duration-500">
     <!-- Profile Configuration Section -->
     <Card class="border-0 shadow-2xl shadow-slate-200/50 rounded-2xl overflow-hidden bg-white/80 backdrop-blur-xl">
       <CardHeader class="pb-4 px-8 pt-8">
@@ -586,7 +650,6 @@ const uploadCroppedImage = async () => {
       </DialogContent>
     </Dialog>
 
-    <!-- E-Signature Dialog -->
     <Dialog v-model:open="showSignatureDialog">
       <DialogContent class="sm:max-w-xl p-0 overflow-hidden border-0 shadow-2xl rounded-2xl">
         <DialogHeader class="p-6 pb-2 border-b border-slate-100 bg-slate-50/50">
@@ -598,7 +661,7 @@ const uploadCroppedImage = async () => {
             Design your digital signature for signing documents.
           </DialogDescription>
         </DialogHeader>
-        <div class="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+        <div class="p-6 space-y-6 max-h-[60vh] overflow-y-auto hide-scrollbar">
           <div class="space-y-2.5">
             <Label for="dialogSignatureText" class="text-xs font-bold text-slate-700">Signature Name</Label>
             <Input id="dialogSignatureText" v-model="formData.signatureText" placeholder="e.g. Apiwat Sukjaroen" class="border-slate-200 text-slate-900 font-bold h-11 rounded-xl px-4 shadow-sm focus-visible:ring-primary/20" />
@@ -638,7 +701,7 @@ const uploadCroppedImage = async () => {
             Cancel
           </Button>
           <Button 
-            @click="handleSaveProfile" 
+            @click="handleSaveSignature" 
             :disabled="isLoading"
             class="rounded-xl h-10 px-6 font-black text-xs uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
           >
@@ -690,3 +753,13 @@ const uploadCroppedImage = async () => {
     </Dialog>
   </div>
 </template>
+
+<style scoped>
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+</style>

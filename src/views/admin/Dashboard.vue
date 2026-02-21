@@ -13,7 +13,6 @@ import { usersApi } from '@/services/users';
 import { useAuthStore } from '@/stores/auth';
 import { format } from 'date-fns';
 import {
-    Activity,
     ArrowUpRight,
     BookOpen,
     Calendar,
@@ -23,11 +22,8 @@ import {
     Monitor,
     Package,
     Plus,
-    ThumbsDown,
-    ThumbsUp,
     Ticket,
     TrendingUp,
-    User,
     Zap
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
@@ -44,7 +40,6 @@ const stats = ref({
   totalUsers: 0,
 });
 
-const recentApprovals = ref<any[]>([]);
 const onlineUsers = ref<any[]>([]);
 const onlineCount = ref(0);
 const showOnlineUsersList = ref(false);
@@ -76,82 +71,11 @@ const ticketStats = computed(() => {
   };
 });
 
-// ── Analytics Computed ────────────────────────────────────────
-const satisfactionStats = computed(() => {
-  const rated = tickets.value.filter((t: ITTicket) => t.rating != null);
-  if (!rated.length) return { total: 0, positive: 0, neutral: 0, negative: 0, positivePercent: 0, neutralPercent: 0, negativePercent: 0 };
-  const positive = rated.filter((t: ITTicket) => (t.rating || 0) >= 4).length;
-  const neutral  = rated.filter((t: ITTicket) => (t.rating || 0) === 3).length;
-  const negative = rated.filter((t: ITTicket) => (t.rating || 0) <= 2).length;
-  return {
-    total: rated.length,
-    positive, neutral, negative,
-    positivePercent: Math.round((positive / rated.length) * 100),
-    neutralPercent:  Math.round((neutral  / rated.length) * 100),
-    negativePercent: Math.round((negative / rated.length) * 100),
-  };
-});
-
-const replyTimeStats = computed(() => {
-  const resolved = tickets.value.filter((t: ITTicket) => t.resolvedAt);
-  const bucket = (t: ITTicket) => {
-    const h = (new Date(t.resolvedAt!).getTime() - new Date(t.createdAt).getTime()) / 3600000;
-    return h;
-  };
-  const lt1h  = resolved.filter(t => bucket(t) <= 1).length;
-  const h1to8 = resolved.filter(t => bucket(t) > 1  && bucket(t) <= 8).length;
-  const h8to24= resolved.filter(t => bucket(t) > 8  && bucket(t) <= 24).length;
-  const gt24h = resolved.filter(t => bucket(t) > 24).length;
-  const noReply = tickets.value.filter((t: ITTicket) => !t.resolvedAt).length;
-  const total = tickets.value.length || 1;
-  return { lt1h, h1to8, h8to24, gt24h, noReply, total };
-});
-
-const replyTimePieGradient = computed(() => {
-  const { lt1h, h1to8, h8to24, gt24h, total } = replyTimeStats.value;
-  const deg = (n: number) => (n / total) * 360;
-  const d1 = deg(lt1h);
-  const d2 = d1 + deg(h1to8);
-  const d3 = d2 + deg(h8to24);
-  const d4 = d3 + deg(gt24h);
-  return `conic-gradient(#0D9488 0deg ${d1}deg, #F59E0B ${d1}deg ${d2}deg, #8B5CF6 ${d2}deg ${d3}deg, #F43F5E ${d3}deg ${d4}deg, #FB923C ${d4}deg 360deg)`;
-});
-
-const categoryStats = computed(() => {
-  const counts: Record<string, number> = {};
-  tickets.value.forEach((t: ITTicket) => {
-    if (t.category) counts[t.category] = (counts[t.category] || 0) + 1;
-  });
-  const total = tickets.value.length || 1;
-  return Object.entries(counts)
-    .map(([name, count]) => ({ name, count, percent: Math.round((count / total) * 100) }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6);
-});
-
-const agentStats = computed(() => {
-  const counts: Record<string, { name: string; count: number }> = {};
-  tickets.value
-    .filter((t: ITTicket) => t.status === 'Resolved' || t.status === 'Closed')
-    .forEach((t: ITTicket) => {
-      if (t.assignee) {
-        const id = t.assigneeId || t.assignee.id;
-        if (!counts[id]) counts[id] = { name: t.assignee.displayName, count: 0 };
-        counts[id].count++;
-      }
-    });
-  return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 5);
-});
-
 const recentTicketsList = computed(() => {
   return [...tickets.value]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 });
-
-const categoryColors = [
-  '#0D9488', '#3B82F6', '#F59E0B', '#8B5CF6', '#F43F5E', '#FB923C'
-];
 
 // Live clock
 const currentTime = ref(new Date());
@@ -194,12 +118,6 @@ const fetchDashboardData = async () => {
     stats.value.totalUsers = Array.isArray(usersData) ? usersData.length : 0;
     tickets.value = Array.isArray(ticketsData) ? ticketsData : [];
 
-    const allApprovals = await approvalsApi.getAll();
-    recentApprovals.value = Array.isArray(allApprovals.data)
-      ? allApprovals.data
-          .sort((a: any, b: any) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
-          .slice(0, 5)
-      : [];
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error);
   } finally {
@@ -210,7 +128,6 @@ const fetchDashboardData = async () => {
 
 const titleDate = (date: Date) => date.toISOString().split('T')[0];
 const formatTime = (dateStr: string) => format(new Date(dateStr), 'HH:mm');
-const formatDateStr = (dateStr: string) => format(new Date(dateStr), 'dd-MMM-yyyy');
 
 onMounted(() => {
   fetchDashboardData();
@@ -520,330 +437,6 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Main Content Area -->
-    <div>
-      <!-- Recent Activity Table -->
-      <Card class="border-none shadow-2xl shadow-black/5 rounded-[14px] overflow-hidden">
-        <CardHeader class="bg-card py-5 px-8 border-b border-border/30">
-          <div class="flex items-center justify-between">
-            <div class="space-y-1">
-              <CardTitle class="text-base font-black tracking-tight flex items-center gap-2">
-                <TrendingUp class="w-4 h-4 text-primary" />
-                Recent Activity
-              </CardTitle>
-              <CardDescription class="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50">Latest system-wide actions and approvals</CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              class="text-xs font-bold text-primary gap-1.5 h-7 px-2 hover:bg-primary/5 rounded-[8px]"
-              @click="router.push('/approvals')"
-            >
-              View All <ArrowUpRight class="w-3 h-3" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent class="p-0">
-          <!-- Table Header -->
-          <div class="grid grid-cols-[3rem_1fr_160px_95px_135px_150px_120px] items-center px-6 py-2.5 bg-muted/40 border-b border-border/40">
-            <span class="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground/60">#</span>
-            <span class="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground/60">Requester</span>
-            <span class="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground/60">Action</span>
-            <span class="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground/60">Priority</span>
-            <span class="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground/60">Status</span>
-            <span class="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground/60">Acted By</span>
-            <span class="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Time</span>
-          </div>
-
-          <!-- Rows -->
-          <div
-            v-for="(item, idx) in recentApprovals"
-            :key="item.id"
-            class="group grid grid-cols-[3rem_1fr_160px_95px_135px_150px_120px] items-center px-6 py-3.5 border-b border-border/30 hover:bg-primary/[0.02] transition-colors duration-150 cursor-pointer"
-            @click="router.push(`/approvals/${item.id}`)"
-          >
-            <!-- # Badge -->
-            <div>
-              <span
-                class="inline-flex items-center justify-center w-6 h-6 rounded-full text-[0.65rem] font-black"
-                :class="[
-                  idx % 5 === 0 ? 'bg-primary/10 text-primary' :
-                  idx % 5 === 1 ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
-                  idx % 5 === 2 ? 'bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400' :
-                  idx % 5 === 3 ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400' :
-                                  'bg-violet-100 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400'
-                ]"
-              >{{ idx + 1 }}</span>
-            </div>
-
-            <!-- Requester -->
-            <div class="flex items-center gap-2.5 min-w-0">
-              <Avatar class="w-8 h-8 rounded-[10px] border border-border/40 shadow-sm shrink-0">
-                <AvatarFallback class="text-[10px] bg-primary/5 text-primary font-black rounded-[10px]">
-                  {{ item.requester?.displayName?.charAt(0) || 'U' }}
-                </AvatarFallback>
-              </Avatar>
-              <div class="min-w-0">
-                <div class="text-sm font-bold text-foreground truncate leading-tight">{{ item.requester?.displayName || '—' }}</div>
-                <div class="text-[0.6rem] font-bold text-muted-foreground/50 uppercase tracking-widest leading-tight mt-0.5">{{ item.sourceApp || 'System' }}</div>
-              </div>
-            </div>
-
-            <!-- Action -->
-            <div class="flex items-center gap-2 min-w-0">
-              <span
-                class="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-[5px] text-[0.55rem] font-black uppercase tracking-widest"
-                :class="
-                  item.actionType === 'CREATE' ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' :
-                  item.actionType === 'DELETE' ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-400' :
-                  item.actionType === 'EDIT'   ? 'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400' :
-                                                  'bg-muted text-muted-foreground'
-                "
-              >{{ item.actionType }}</span>
-              <span class="text-xs font-bold text-foreground/70 truncate">{{ item.entityType }}</span>
-            </div>
-
-            <!-- Priority -->
-            <div>
-              <span
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-[6px] text-[0.6rem] font-black uppercase tracking-widest"
-                :class="
-                  item.priority === 'HIGH'   ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400' :
-                  item.priority === 'MEDIUM' ? 'bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400' :
-                                               'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                "
-              >
-                <span class="w-1.5 h-1.5 rounded-full"
-                  :class="
-                    item.priority === 'HIGH'   ? 'bg-rose-500' :
-                    item.priority === 'MEDIUM' ? 'bg-amber-500' : 'bg-slate-400'"
-                ></span>
-                {{ item.priority || 'LOW' }}
-              </span>
-            </div>
-
-            <!-- Status Pill -->
-            <div>
-              <span
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-widest border"
-                :class="
-                  item.status === 'APPROVED'
-                    ? 'border-emerald-300 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10'
-                    : item.status === 'PENDING'
-                    ? 'border-amber-300 dark:border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10'
-                    : 'border-rose-300 dark:border-rose-500/40 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10'
-                "
-              >
-                <span class="w-1.5 h-1.5 rounded-full"
-                  :class="
-                    item.status === 'APPROVED' ? 'bg-emerald-500' :
-                    item.status === 'PENDING'  ? 'bg-amber-500'  : 'bg-rose-500'"
-                ></span>
-                {{ item.status }}
-              </span>
-            </div>
-
-            <!-- Acted By -->
-            <div>
-              <div v-if="item.approver" class="flex items-center gap-2 min-w-0">
-                <Avatar class="w-6 h-6 rounded-[7px] border border-border/40 shadow-sm shrink-0">
-                  <AvatarFallback class="text-[9px] bg-muted text-muted-foreground font-black rounded-[7px]">
-                    {{ item.approver?.displayName?.charAt(0) || '?' }}
-                  </AvatarFallback>
-                </Avatar>
-                <div class="min-w-0">
-                  <div class="text-xs font-bold text-foreground/70 truncate leading-tight">{{ item.approver?.displayName }}</div>
-                  <div v-if="item.actedAt" class="text-[0.55rem] font-bold text-muted-foreground/40 uppercase tracking-widest">{{ formatTime(item.actedAt) }}</div>
-                </div>
-              </div>
-              <span v-else class="text-[0.7rem] text-muted-foreground/30 font-bold">—</span>
-            </div>
-
-            <!-- Time -->
-            <div class="text-right">
-              <div class="text-xs font-black text-foreground">{{ formatTime(item.submittedAt) }}</div>
-              <div class="text-[0.6rem] font-bold text-muted-foreground/50 uppercase tracking-wider mt-0.5">{{ formatDateStr(item.submittedAt) }}</div>
-            </div>
-          </div>
-
-          <!-- Empty State -->
-          <div v-if="recentApprovals.length === 0" class="flex flex-col items-center gap-3 py-24 opacity-20">
-            <Activity class="w-12 h-12" />
-            <p class="text-sm font-black uppercase tracking-widest">No Recent Activity Recorded</p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-
-    <!-- ── Analytics Section ────────────────────────────────── -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-      <!-- Customer Satisfaction -->
-      <Card class="border-none shadow-2xl shadow-black/5 rounded-[10px] overflow-hidden">
-        <CardHeader class="px-6 pt-5 pb-3 flex flex-row items-start justify-between">
-          <div>
-            <CardTitle class="text-base font-black tracking-tight flex items-center gap-2">
-              <ThumbsUp class="w-4 h-4 text-primary" />
-              Customer Satisfaction
-            </CardTitle>
-            <CardDescription class="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50 mt-0.5">Based on ticket ratings</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent class="px-6 pb-5">
-          <!-- Total Responses -->
-          <div class="mb-4">
-            <p class="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/60">Responses Received</p>
-            <p class="text-2xl font-black tracking-tight text-foreground mt-0.5">{{ satisfactionStats.total }} <span class="text-sm font-bold text-muted-foreground">Tickets Rated</span></p>
-          </div>
-          <!-- 3 stat grid -->
-          <div class="grid grid-cols-3 gap-3">
-            <!-- Positive -->
-            <div class="p-3 rounded-[10px] bg-teal-50 dark:bg-teal-500/10 border border-teal-100 dark:border-teal-500/20">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[0.6rem] font-black uppercase tracking-widest text-teal-600 dark:text-teal-400">Positive</span>
-                <div class="w-7 h-7 rounded-full bg-teal-100 dark:bg-teal-500/20 flex items-center justify-center">
-                  <ThumbsUp class="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                </div>
-              </div>
-              <p class="text-xl font-black text-teal-700 dark:text-teal-300">{{ satisfactionStats.positivePercent }}%</p>
-              <div class="mt-2 h-1 rounded-full bg-teal-100 dark:bg-teal-500/20 overflow-hidden">
-                <div class="h-full rounded-full bg-teal-500 transition-all duration-700" :style="{ width: satisfactionStats.positivePercent + '%' }"></div>
-              </div>
-            </div>
-            <!-- Neutral -->
-            <div class="p-3 rounded-[10px] bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[0.6rem] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Neutral</span>
-                <div class="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
-                  <ThumbsUp class="w-3.5 h-3.5 text-amber-500" />
-                </div>
-              </div>
-              <p class="text-xl font-black text-amber-700 dark:text-amber-300">{{ satisfactionStats.neutralPercent }}%</p>
-              <div class="mt-2 h-1 rounded-full bg-amber-100 dark:bg-amber-500/20 overflow-hidden">
-                <div class="h-full rounded-full bg-amber-500 transition-all duration-700" :style="{ width: satisfactionStats.neutralPercent + '%' }"></div>
-              </div>
-            </div>
-            <!-- Negative -->
-            <div class="p-3 rounded-[10px] bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[0.6rem] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400">Negative</span>
-                <div class="w-7 h-7 rounded-full bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center">
-                  <ThumbsDown class="w-3.5 h-3.5 text-rose-500" />
-                </div>
-              </div>
-              <p class="text-xl font-black text-rose-700 dark:text-rose-300">{{ satisfactionStats.negativePercent }}%</p>
-              <div class="mt-2 h-1 rounded-full bg-rose-100 dark:bg-rose-500/20 overflow-hidden">
-                <div class="h-full rounded-full bg-rose-500 transition-all duration-700" :style="{ width: satisfactionStats.negativePercent + '%' }"></div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Ticket by First Reply Time -->
-      <Card class="border-none shadow-2xl shadow-black/5 rounded-[10px] overflow-hidden">
-        <CardHeader class="px-6 pt-5 pb-3">
-          <CardTitle class="text-base font-black tracking-tight flex items-center gap-2">
-            <Clock class="w-4 h-4 text-primary" />
-            Ticket By Resolution Time
-          </CardTitle>
-          <CardDescription class="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50 mt-0.5">Distribution of resolution time ranges</CardDescription>
-        </CardHeader>
-        <CardContent class="px-6 pb-5">
-          <div class="flex items-center gap-6">
-            <!-- Pie Chart (CSS conic-gradient) -->
-            <div class="relative shrink-0">
-              <div
-                class="w-36 h-36 rounded-full"
-                :style="{ background: replyTimePieGradient }"
-              ></div>
-              <div class="absolute inset-[22%] rounded-full bg-card shadow-inner"></div>
-            </div>
-            <!-- Legend -->
-            <div class="flex-1 space-y-2.5">
-              <div
-                v-for="(item, i) in [
-                  { label: '0–1 Hours',  color: '#0D9488', count: replyTimeStats.lt1h },
-                  { label: '1–8 Hours',  color: '#F59E0B', count: replyTimeStats.h1to8 },
-                  { label: '8–24 Hours', color: '#8B5CF6', count: replyTimeStats.h8to24 },
-                  { label: '> 24 Hours', color: '#F43F5E', count: replyTimeStats.gt24h },
-                  { label: 'No Reply',   color: '#FB923C', count: replyTimeStats.noReply },
-                ]"
-                :key="i"
-                class="flex items-center gap-2"
-              >
-                <span class="w-2.5 h-2.5 rounded-sm shrink-0" :style="{ backgroundColor: item.color }"></span>
-                <span class="flex-1 text-xs font-bold text-foreground/70">{{ item.label }}</span>
-                <span class="text-xs font-black text-foreground">{{ item.count }}</span>
-                <span class="text-[0.6rem] font-bold text-muted-foreground/50 w-10 text-right">
-                  {{ replyTimeStats.total ? Math.round((item.count / replyTimeStats.total) * 100) : 0 }}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Ticket by Category -->
-      <Card class="border-none shadow-2xl shadow-black/5 rounded-[10px] overflow-hidden">
-        <CardHeader class="px-6 pt-5 pb-3">
-          <CardTitle class="text-base font-black tracking-tight flex items-center gap-2">
-            <ClipboardList class="w-4 h-4 text-primary" />
-            Ticket by Category
-          </CardTitle>
-          <CardDescription class="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50 mt-0.5">Volume breakdown by ticket category</CardDescription>
-        </CardHeader>
-        <CardContent class="px-6 pb-5 space-y-3">
-          <div v-if="!categoryStats.length" class="text-center py-8 text-muted-foreground/30 text-xs font-bold uppercase tracking-widest">No data</div>
-          <div v-for="(item, i) in categoryStats" :key="item.name" class="space-y-1">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-sm" :style="{ backgroundColor: categoryColors[i % categoryColors.length] }"></span>
-                <span class="text-xs font-bold text-foreground">{{ item.name }}</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-black text-foreground">{{ item.count }}</span>
-                <span class="text-[0.6rem] font-bold text-muted-foreground/50 w-8 text-right">{{ item.percent }}%</span>
-              </div>
-            </div>
-            <div class="h-2 rounded-full bg-muted overflow-hidden">
-              <div
-                class="h-full rounded-full transition-all duration-700"
-                :style="{ width: item.percent + '%', backgroundColor: categoryColors[i % categoryColors.length] }"
-              ></div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Tickets Solved By Agent -->
-      <Card class="border-none shadow-2xl shadow-black/5 rounded-[10px] overflow-hidden">
-        <CardHeader class="px-6 pt-5 pb-3">
-          <CardTitle class="text-base font-black tracking-tight flex items-center gap-2">
-            <User class="w-4 h-4 text-primary" />
-            Tickets Solved By Agent
-          </CardTitle>
-          <CardDescription class="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50 mt-0.5">Top resolvers this period</CardDescription>
-        </CardHeader>
-        <CardContent class="px-6 pb-5">
-          <div v-if="!agentStats.length" class="text-center py-8 text-muted-foreground/30 text-xs font-bold uppercase tracking-widest">No resolved tickets</div>
-          <div v-for="(agent, i) in agentStats" :key="i" class="flex items-center gap-3 py-3 border-b border-border/30 last:border-0">
-            <Avatar class="w-10 h-10 rounded-[10px] border border-border/40 shadow-sm shrink-0">
-              <AvatarFallback class="text-xs bg-primary/5 text-primary font-black rounded-[10px]">{{ agent.name?.charAt(0) || '?' }}</AvatarFallback>
-            </Avatar>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-foreground truncate">{{ agent.name || 'Unknown' }}</p>
-              <p class="text-[0.6rem] font-bold text-muted-foreground/50 uppercase tracking-widest">IT Support Agent</p>
-            </div>
-            <div class="text-right shrink-0">
-              <span class="text-sm font-black text-foreground">{{ agent.count }}</span>
-              <span class="text-[0.6rem] font-bold text-muted-foreground/60 ml-1">Tickets</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-    </div>
 
     <!-- Recent Tickets (full width) -->
     <Card class="border-none shadow-2xl shadow-black/5 rounded-[10px] overflow-hidden">

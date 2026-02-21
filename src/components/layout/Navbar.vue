@@ -25,6 +25,12 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { usePermissions } from '@/composables/usePermissions';
 import approvalsApi from '@/services/approvals';
 import { bookingsApi } from '@/services/bookings';
@@ -432,34 +438,56 @@ onUnmounted(() => {
             </div>
             
             <!-- Actions -->
-            <div class="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                class="h-8 w-8 hover:bg-muted rounded-full" 
-                @click="router.push('/profile')"
-                title="Profile"
-              >
-                <User class="w-4 h-4 text-muted-foreground" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                class="h-8 w-8 hover:bg-muted rounded-full" 
-                @click="showThemeSettings = true"
-                title="Theme Settings"
-              >
-                <Settings class="w-4 h-4 text-muted-foreground" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                class="h-8 w-8 hover:bg-red-50 hover:text-red-600 rounded-full" 
-                @click="handleLogout"
-                title="Sign Out"
-              >
-                <LogOut class="w-4 h-4 text-red-500" />
-              </Button>
+            <div class="flex items-center gap-0">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      class="h-8 w-8 hover:bg-muted rounded-full" 
+                      @click="router.push('/profile')"
+                    >
+                      <User class="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Profile</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      class="h-8 w-8 hover:bg-muted rounded-full" 
+                      @click="showThemeSettings = true"
+                    >
+                      <Settings class="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Theme Settings</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      class="h-8 w-8 hover:bg-red-50 hover:text-red-600 rounded-full" 
+                      @click="handleLogout"
+                    >
+                      <LogOut class="w-4 h-4 text-red-500" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Sign Out</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
 
