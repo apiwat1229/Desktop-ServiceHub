@@ -26,6 +26,8 @@ import { toast } from 'vue-sonner';
 const authStore = useAuthStore();
 const isLoading = ref(false);
 const isUploading = ref(false);
+const isCheckingEmployeeId = ref(false);
+const employeeIdError = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
 
 // Profile Edit Logic
@@ -160,16 +162,22 @@ const handleSaveProfile = async () => {
     // Pre-check employeeId uniqueness to provide immediate feedback
     const newEmployeeId = formData.value.employeeId?.trim();
     if (newEmployeeId) {
+      isCheckingEmployeeId.value = true;
+      employeeIdError.value = '';
       try {
         const res = await api.get(`/users/employee/${encodeURIComponent(newEmployeeId)}/exists`);
         if (res.data?.exists && res.data.userId !== authStore.user?.id) {
+          employeeIdError.value = 'Employee ID already in use';
           toast.error('Employee ID already in use');
+          isCheckingEmployeeId.value = false;
           isLoading.value = false;
           return;
         }
       } catch (err) {
         // If check fails, log but continue to attempt update (backend will still enforce uniqueness)
         console.warn('Employee ID existence check failed, proceeding to update', err);
+      } finally {
+        isCheckingEmployeeId.value = false;
       }
     }
     // Simulate API call for profile update (separate from avatar)
@@ -479,10 +487,10 @@ const uploadCroppedImage = async () => {
                 </Button>
                 <Button 
                   @click="handleSaveProfile" 
-                  :disabled="isLoading"
+                  :disabled="isLoading || isCheckingEmployeeId"
                   class="bg-teal-500 hover:bg-teal-600 text-white rounded-xl h-10 px-6 font-black text-xs uppercase tracking-widest shadow-lg shadow-teal-500/20"
                 >
-                  {{ isLoading ? 'Saving...' : 'Save Changes' }}
+                  {{ isCheckingEmployeeId ? 'Checking...' : (isLoading ? 'Saving...' : 'Save Changes') }}
                 </Button>
               </template>
             </div>
@@ -524,6 +532,7 @@ const uploadCroppedImage = async () => {
               <div class="space-y-2.5">
                 <Label for="employeeId" class="text-xs font-bold text-slate-700">Employee ID</Label>
                 <Input id="employeeId" v-model="formData.employeeId" :disabled="!isEditingProfile" :class="!isEditingProfile ? 'bg-slate-50 border-slate-100 text-slate-500 shadow-none' : 'border-slate-200 text-slate-900 shadow-sm focus-visible:ring-primary/20'" class="font-bold h-11 rounded-xl px-4 transition-colors" />
+                <p v-if="employeeIdError" class="text-xs text-red-600 mt-1">{{ employeeIdError }}</p>
               </div>
             </div>
           </CardContent>
