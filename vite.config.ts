@@ -140,12 +140,12 @@ export default defineConfig(({ mode }) => {
       allowedHosts: ['app.ytrc.co.th', 'localhost', '122.154.46.21'],
       proxy: {
         '/api': {
-          target: 'https://app.ytrc.co.th',
+          target: mode === 'development' ? 'http://localhost:2530' : 'https://app.ytrc.co.th',
           changeOrigin: true,
           secure: false,
         },
         '/socket.io': {
-          target: 'https://app.ytrc.co.th',
+          target: mode === 'development' ? 'http://localhost:2530' : 'https://app.ytrc.co.th',
           changeOrigin: true,
           secure: false,
           ws: true,
