@@ -138,19 +138,24 @@ export default defineConfig(({ mode }) => {
       host: true,
       port: 5173,
       allowedHosts: ['app.ytrc.co.th', 'localhost', '122.154.46.21'],
-      proxy: {
-        '/api': {
-          target: mode === 'development' ? 'http://localhost:2530' : 'https://app.ytrc.co.th',
-          changeOrigin: true,
-          secure: false,
-        },
-        '/socket.io': {
-          target: mode === 'development' ? 'http://localhost:2530' : 'https://app.ytrc.co.th',
-          changeOrigin: true,
-          secure: false,
-          ws: true,
-        },
-      },
+      // Proxy API and socket requests to backend during development.
+      // Uses VITE_API_URL if provided, otherwise defaults to local backend at http://localhost:3000
+      proxy: (() => {
+        const apiTarget = process.env.VITE_API_URL || 'http://localhost:3000';
+        return {
+          '/api': {
+            target: apiTarget,
+            changeOrigin: true,
+            secure: false,
+          },
+          '/socket.io': {
+            target: apiTarget,
+            changeOrigin: true,
+            secure: false,
+            ws: true,
+          },
+        };
+      })(),
     },
     define: {
       __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
