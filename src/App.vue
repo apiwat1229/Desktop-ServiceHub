@@ -41,6 +41,10 @@ const handleRetry = async () => {
   isRetrying.value = false;
 };
 
+const goBack = () => router.back();
+const goForward = () => router.forward();
+const reloadPage = () => window.location.reload();
+
 onMounted(() => {
   checkHealth();
   // socketService managed in Navbar
@@ -80,10 +84,10 @@ onUnmounted(() => {
 <template>
   <GlobalBackground />
   <div class="relative z-10 flex flex-col h-screen text-foreground">
-    <!-- Navbar always visible -->
-    <Navbar />
+      <!-- Navbar always visible -->
+      <Navbar />
 
-    <div class="flex-1 overflow-hidden relative">
+      <div class="flex-1 overflow-hidden relative">
       <!-- Loading & Error States -->
       <div
         v-if="isLoading || error"

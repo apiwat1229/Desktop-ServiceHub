@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import api from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
 import { Camera, Check, Lock, PenLine, Shield } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { CircleStencil, Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 import { toast } from 'vue-sonner';
@@ -121,6 +121,20 @@ const formData = ref({
   signatureText: authStore.user?.signatureText || '',
   signatureStyle: authStore.user?.signatureStyle || 'Caveat',
 });
+
+// Watch for authStore user changes and update formData
+watch(() => authStore.user, (newUser: any) => {
+  if (newUser) {
+    formData.value.username = newUser.username || '';
+    formData.value.email = newUser.email || '';
+    formData.value.firstName = newUser.firstName || '';
+    formData.value.lastName = newUser.lastName || '';
+    formData.value.displayName = newUser.displayName || '';
+    formData.value.employeeId = newUser.employeeId || '';
+    formData.value.signatureText = newUser.signatureText || '';
+    formData.value.signatureStyle = newUser.signatureStyle || 'Caveat';
+  }
+}, { immediate: true, deep: true });
 
 const signatureFonts = [
   { name: 'Caveat', family: "'Caveat', cursive" },
