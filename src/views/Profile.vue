@@ -157,6 +157,21 @@ const userInitials = () => {
 const handleSaveProfile = async () => {
   isLoading.value = true;
   try {
+    // Pre-check employeeId uniqueness to provide immediate feedback
+    const newEmployeeId = formData.value.employeeId?.trim();
+    if (newEmployeeId) {
+      try {
+        const res = await api.get(`/users/employee/${encodeURIComponent(newEmployeeId)}/exists`);
+        if (res.data?.exists && res.data.userId !== authStore.user?.id) {
+          toast.error('Employee ID already in use');
+          isLoading.value = false;
+          return;
+        }
+      } catch (err) {
+        // If check fails, log but continue to attempt update (backend will still enforce uniqueness)
+        console.warn('Employee ID existence check failed, proceeding to update', err);
+      }
+    }
     // Simulate API call for profile update (separate from avatar)
     await api.patch(`/users/${authStore.user?.id}`, {
       firstName: formData.value.firstName,
@@ -171,7 +186,8 @@ const handleSaveProfile = async () => {
     toast.success('Profile updated successfully');
     isEditingProfile.value = false;
   } catch (error) {
-    toast.error('Failed to update profile');
+    const msg = (error as any)?.response?.data?.message || (error as any)?.message || 'Failed to update profile';
+    toast.error(msg);
   } finally {
     isLoading.value = false;
   }
