@@ -243,9 +243,22 @@ const filteredRequests = computed(() => {
 
 onMounted(() => {
   loadTickets();
+  
+  // Join the IT helpdesk room for department-wide real-time updates
+  socketService.joinRoom('it-helpdesk');
+
   socketService.on('ticket:created', loadTickets);
-  socketService.on('ticket:updated', (updatedTicket: ITTicket) => onTicketUpdated(updatedTicket));
+
+  socketService.on('ticket:updated', (updatedTicket: ITTicket) => {
+    onTicketUpdated(updatedTicket);
+  });
+
   socketService.on('ticket:deleted', loadTickets);
+
+  socketService.on('ticket:commented', ({ ticketId }: { ticketId: string }) => {
+    // Refresh for asset requests if relevant
+    loadTickets();
+  });
   
   if (useRoute().query.action === 'new') {
       isAssetModalOpen.value = true;
@@ -253,9 +266,10 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  socketService.off('ticket:created', loadTickets);
+  socketService.off('ticket:created');
   socketService.off('ticket:updated');
   socketService.off('ticket:deleted');
+  socketService.off('ticket:commented');
 });
 </script>
 

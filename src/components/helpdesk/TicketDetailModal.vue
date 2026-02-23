@@ -1,23 +1,28 @@
 <script setup lang="ts">
 import JobOrderA4 from "@/components/helpdesk/JobOrderA4.vue";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import DatePicker from "@/components/ui/date-picker.vue";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
+    Dialog,
+    DialogContent,
+    DialogDescription
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import Time24hPicker from "@/components/ui/time-picker/Time24hPicker.vue";
 import { usePermissions } from "@/composables/usePermissions";
 import { useUsers } from "@/composables/useUsers";
 import { getAvatarUrl } from "@/lib/utils";
@@ -26,19 +31,21 @@ import { itTicketsApi } from "@/services/it-tickets";
 import { socketService } from "@/services/socket";
 import { useAuthStore } from "@/stores/auth";
 import {
-  format,
-  formatDistanceToNowStrict,
-  intervalToDuration,
+    format,
+    formatDistanceToNowStrict,
+    intervalToDuration,
 } from "date-fns";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import {
-  AlertCircle,
-  ArrowUpDown,
-  FileText,
-  History,
-  Printer,
-  X,
+    AlertCircle,
+    Calendar,
+    Clock,
+    FileText,
+    History,
+    Printer,
+    Save,
+    X
 } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { toast } from "vue-sonner";
@@ -77,11 +84,12 @@ const selectedAssignee = ref("");
 const isDeleteDialogOpen = ref(false);
 const isRejectDialogOpen = ref(false);
 const isStatusConfirmDialogOpen = ref(false);
+const isEditingDates = ref(false);
 
-const createdDate = ref<string | null>(null);
+const createdDate = ref("");
 const createdTime = ref("00:00");
 
-const resolvedDate = ref<string | null>(null);
+const resolvedDate = ref("");
 const resolvedTime = ref("00:00");
 
 // Initialize local state when ticket changes
@@ -109,7 +117,7 @@ watch(
         resolvedDate.value = `${year}-${month}-${day}`;
         resolvedTime.value = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
       } else {
-        resolvedDate.value = null;
+        resolvedDate.value = "";
         resolvedTime.value = "00:00";
       }
 
@@ -142,6 +150,16 @@ const isOpen = computed({
   get: () => props.open,
   set: (val) => emit("update:open", val),
 });
+
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case 'Low': return 'text-blue-600 bg-blue-50 border-blue-100';
+    case 'Medium': return 'text-amber-600 bg-amber-50 border-amber-100';
+    case 'High': return 'text-orange-600 bg-orange-50 border-orange-100';
+    case 'Critical': return 'text-rose-600 bg-rose-50 border-rose-100';
+    default: return 'text-slate-600 bg-slate-50 border-slate-100';
+  }
+};
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -213,6 +231,42 @@ const resolutionDuration = computed(() => {
   return parts.join(" ");
 });
 
+const liveDurationMs = computed(() => {
+  if (!createdDate.value || !resolvedDate.value) return 0;
+  try {
+    const [cYear, cMonth, cDay] = createdDate.value.split("-").map(Number);
+    const [cHours, cMinutes] = createdTime.value.split(":").map(Number);
+    const startDate = new Date(cYear, cMonth - 1, cDay, cHours, cMinutes);
+
+    const [rYear, rMonth, rDay] = resolvedDate.value.split("-").map(Number);
+    const [rHours, rMinutes] = resolvedTime.value.split(":").map(Number);
+    const endDate = new Date(rYear, rMonth - 1, rDay, rHours, rMinutes);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 0;
+    return endDate.getTime() - startDate.getTime();
+  } catch (e) {
+    return 0;
+  }
+});
+
+const liveDuration = computed(() => {
+  const ms = liveDurationMs.value;
+  if (ms < 0) return "Invalid Range";
+  if (ms === 0) return null;
+
+  const duration = intervalToDuration({ start: 0, end: ms });
+
+  let parts = [];
+  if (duration.years) parts.push(`${duration.years}y`);
+  if (duration.months) parts.push(`${duration.months}m`);
+  if (duration.days) parts.push(`${duration.days}d`);
+  if (duration.hours) parts.push(`${duration.hours}h`);
+  if (duration.minutes) parts.push(`${duration.minutes}m`);
+  if (parts.length === 0) return "less than 1m";
+
+  return parts.join(" ");
+});
+
 const refreshTicket = async () => {
   if (!props.ticket?.id) return;
   try {
@@ -266,7 +320,7 @@ const mergedTimeline = computed(() => {
   ) as any[];
 });
 
-const saveChanges = async (confirmed = false) => {
+const saveChanges = async (confirmed = false, preventClose = false) => {
   if (!localTicket.value) return;
 
   const isClosing = ["Resolved", "Closed"].includes(selectedStatus.value);
@@ -283,6 +337,16 @@ const saveChanges = async (confirmed = false) => {
     loading.value = true;
     const updateDto: UpdateITTicketDto = {};
     let hasChanges = false;
+
+    if (localTicket.value.title !== props.ticket?.title) {
+      updateDto.title = localTicket.value.title;
+      hasChanges = true;
+    }
+
+    if (localTicket.value.description !== props.ticket?.description) {
+      updateDto.description = localTicket.value.description;
+      hasChanges = true;
+    }
 
     if (selectedStatus.value !== localTicket.value.status) {
       updateDto.status = selectedStatus.value as any;
@@ -317,15 +381,13 @@ const saveChanges = async (confirmed = false) => {
         const newResolvedAt = newResolvedAtDate.toISOString();
 
         // ALWAYS update the resolvedAt if status is resolved/closed and we have a date
-        // This fixes the issue where sometimes the date doesn't update if it thinks it's the same
         (updateDto as any).resolvedAt = newResolvedAt;
         hasChanges = true;
-        console.log("[DEBUG] Setting resolvedAt:", newResolvedAt);
       }
     }
 
-    // Handle createdAt update (Admin only)
-    if (isAdmin.value && createdDate.value) {
+    // Handle createdAt update (Admin or IT/Owner in Reschedule mode)
+    if ((isAdmin.value || (canManage.value && isEditingDates.value)) && createdDate.value) {
       try {
         const [year, month, day] = createdDate.value.split("-").map(Number);
         let hours = 0,
@@ -342,12 +404,6 @@ const saveChanges = async (confirmed = false) => {
         const newCreatedAtDate = new Date(year, month - 1, day, hours, minutes);
         const newCreatedAt = newCreatedAtDate.toISOString();
 
-        console.log("[DEBUG] Admin updating createdAt:", {
-          old: localTicket.value.createdAt,
-          new: newCreatedAt,
-          isDiff: newCreatedAt !== localTicket.value.createdAt,
-        });
-
         if (newCreatedAt !== localTicket.value.createdAt) {
           (updateDto as any).createdAt = newCreatedAt;
           hasChanges = true;
@@ -358,27 +414,26 @@ const saveChanges = async (confirmed = false) => {
     }
 
     if (!hasChanges) {
-      toast.info("No changes to save");
+      // If we called saveChanges from handlePostComment, we don't want to show "No changes to save"
+      if (!preventClose && !confirmed) {
+        toast.info("No changes to save");
+      }
       loading.value = false;
       return;
     }
-
-    console.log("[DEBUG] Sending updateDto:", updateDto);
 
     const updatedTicket = await itTicketsApi.update(
       props.ticket!.id,
       updateDto,
     );
-    // console.log('[DEBUG] Received updatedTicket:', updatedTicket); // Removed debug log
 
     toast.success("Ticket updated successfully");
     emit("ticketUpdated", updatedTicket);
 
-    if (comment.value.trim()) {
-      await handlePostComment();
+    // Only close if not explicitly prevented
+    if (!preventClose) {
+      emit("update:open", false);
     }
-
-    emit("update:open", false);
   } catch (error) {
     console.error(error);
     toast.error("Failed to update ticket");
@@ -483,6 +538,9 @@ const handlePostComment = async () => {
 
     comment.value = "";
     toast.success("Comment posted");
+
+    // Auto-save other changes silently without closing the modal
+    await saveChanges(true, true);
   } catch (error) {
     console.error("Failed to post comment:", error);
     toast.error("Failed to post comment");
@@ -607,8 +665,8 @@ const handlePrint = async () => {
       class="w-full p-0 gap-0 overflow-hidden border-none shadow-2xl flex flex-col transition-all duration-300 bg-white"
       :class="
         viewMode === 'paper-only'
-          ? 'max-w-[850px] max-h-[98vh] rounded-2xl'
-          : 'max-w-[950px] max-h-[95vh] rounded-2xl'
+          ? 'max-w-[850px] max-h-[98vh] rounded-[10px]'
+          : 'max-w-[950px] max-h-[95vh] rounded-[10px]'
       "
     >
       <DialogDescription class="sr-only">
@@ -671,92 +729,226 @@ const handlePrint = async () => {
         </button>
       </div>
 
-      <!-- Main A4 Form Content Area -->
-      <div
-        class="flex-1 min-h-0 overflow-y-auto p-6 print:p-0 scrollbar-hide"
-        :class="
-          viewMode === 'paper-only'
-            ? 'bg-slate-50 flex flex-col items-center pt-4 pb-8'
-            : 'bg-slate-100/50'
-        "
-      >
-        <!-- Standard Wrapper for Paper-only mode (Original Scale) -->
-        <div
-          :class="
-            viewMode === 'paper-only'
-              ? 'relative pointer-events-none select-none'
-              : 'relative'
-          "
-        >
-          <!-- The Componentized A4 Paper Sheet -->
-          <JobOrderA4
-            ref="jobOrderRef"
-            :ticket="localTicket"
-            :isEditable="viewMode === 'paper-only' ? false : isEditable"
-            :canManage="viewMode === 'paper-only' ? false : canManage"
-            :availableAssignees="availableAssignees"
-            :resolutionDuration="resolutionDuration"
-            :getStatusColor="getStatusColor"
-            @update:ticket="(val) => (localTicket = val)"
-            @update:assignee="(val) => (selectedAssignee = val)"
-            @update:priority="(val) => (selectedPriority = val)"
-            @update:status="(val) => (selectedStatus = val)"
-          />
-        </div>
+      <!-- Main Content Area -->
+      <div class="flex-1 min-h-0 flex flex-col overflow-hidden bg-slate-50/50">
+        
+        <!-- Management Mode: Form + History -->
+        <div v-if="viewMode === 'management'" class="flex-1 overflow-y-auto scrollbar-hide">
+          <div class="px-6 py-6 space-y-6">
+            <!-- Quick Info Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-white p-4 rounded-[10px] border border-slate-200/60 shadow-sm space-y-1">
+                <span class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Ticket Identification</span>
+                <div class="flex items-center gap-3">
+                  <span class="text-xl font-black text-slate-900 tracking-tight">{{ localTicket?.ticketNo }}</span>
+                  <div :class="['h-5 px-2 flex items-center rounded text-[0.6rem] font-bold uppercase tracking-widest border border-current', getStatusColor(selectedStatus)]">
+                    {{ selectedStatus }}
+                  </div>
+                </div>
+              </div>
 
-        <!-- Service History (Tab Area - Hidden in Print or Paper-only) -->
-        <div
-          v-if="viewMode === 'management'"
-          class="max-w-[800px] mx-auto mt-8 px-10 print:hidden"
-        >
-          <div class="space-y-6">
-            <div class="flex items-center justify-between">
-              <h4
-                class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3"
-              >
-                <History class="w-4 h-4" />
-                System Audit & Activity Logs
-              </h4>
-              <span
-                class="text-xs font-black text-slate-400 uppercase tracking-widest"
-                >{{ mergedTimeline.length }} Events</span
-              >
+              <div class="bg-white p-4 rounded-[10px] border border-slate-200/60 shadow-sm space-y-1">
+                <span class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Requester / ผู้แจ้งซ่อม</span>
+                <div class="flex items-center gap-2">
+                  <Avatar class="w-6 h-6 ring-1 ring-slate-100">
+                    <AvatarImage :src="getAvatarUrl(localTicket?.requester?.avatar)" />
+                    <AvatarFallback class="text-[10px]">{{ userInitials(localTicket?.requester) }}</AvatarFallback>
+                  </Avatar>
+                  <span class="text-sm font-bold text-slate-700 truncate">{{ localTicket?.requester?.displayName || localTicket?.requester?.username }}</span>
+                </div>
+              </div>
+
+              <div class="bg-white p-4 rounded-[10px] border border-slate-200/60 shadow-sm space-y-1">
+                <span class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Ticket Opened At / วันที่เปิด</span>
+                <div class="flex items-center gap-2">
+                  <Calendar class="w-4 h-4 text-primary" />
+                  <span class="text-sm font-bold text-slate-700 tabular-nums">
+                    {{ localTicket?.createdAt ? format(new Date(localTicket.createdAt), 'dd MMM yyyy, HH:mm') : '-' }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="bg-white p-4 rounded-[10px] border border-slate-200/60 shadow-sm space-y-1">
+                <span class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Service Duration</span>
+                <div class="flex items-center gap-2">
+                  <History class="w-4 h-4 text-slate-400" />
+                  <span class="text-sm font-bold text-slate-700">{{ resolutionDuration || 'Running...' }}</span>
+                </div>
+              </div>
             </div>
 
-            <!-- Enhanced Timeline Content -->
-            <div class="space-y-4 pb-20">
+            <!-- Management Form Container -->
+            <div class="bg-white rounded-[10px] border border-slate-200/60 shadow-sm overflow-hidden">
+              <div class="p-6 space-y-6">
+                <!-- Timestamp Editing Section (Reschedule) -->
+                <div v-if="isEditingDates" class="p-6 bg-slate-50/50 rounded-[10px] border border-slate-100 space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <Clock class="w-4 h-4 text-primary" />
+                      Adjust Document Timestamps
+                      <span v-if="liveDuration" :class="[
+                        'ml-2 px-2 py-0.5 rounded text-[10px] border transition-all',
+                        liveDuration === 'Invalid Range' ? 'bg-rose-50 text-rose-600 border-rose-200' : 
+                        (liveDurationMs > 10800000 ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                        (liveDurationMs > 9000000 ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                        'bg-emerald-50 text-emerald-600 border-emerald-200'))
+                      ]">
+                        Total: {{ liveDuration }}
+                      </span>
+                    </h4>
+                    <span class="text-[0.6rem] font-bold text-slate-400 uppercase italic">Override timestamps manually</span>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Opening Details -->
+                    <div class="space-y-3">
+                      <Label class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-1">Case Opened At / วันที่เวลาเปิดงาน</Label>
+                      <div class="flex gap-2">
+                        <DatePicker v-model="createdDate" class="flex-1" />
+                        <Time24hPicker v-model="createdTime" class="w-28" />
+                      </div>
+                    </div>
+
+                    <!-- Closing Details -->
+                    <div class="space-y-3">
+                      <Label class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-1">Case Resolved At / วันที่เวลาปิดงาน</Label>
+                      <div class="flex items-center gap-2">
+                        <DatePicker v-model="resolvedDate" class="flex-1" />
+                        <Time24hPicker v-model="resolvedTime" class="w-28" />
+                        <Button
+                          @click="saveChanges()"
+                          :disabled="loading"
+                          size="icon"
+                          class="bg-emerald-600 hover:bg-emerald-700 text-white w-10 h-10 rounded-[10px] shadow-sm transition-all active:scale-95 shrink-0"
+                          title="Save Changes"
+                        >
+                          <Save class="w-5 h-5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <div class="space-y-3">
+                  <Label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Case Subject / หัวข้อปัญหา</Label>
+                  <Input 
+                    v-model="localTicket!.title" 
+                    placeholder="Enter ticket title..."
+                    class="h-12 px-4 rounded-[10px] bg-slate-50 border-transparent focus-visible:ring-primary/20 text-base font-bold text-slate-900 transition-all"
+                  />
+                </div>
+
+                <div class="space-y-3">
+                  <Label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Detailed Description / รายละเอียด</Label>
+                  <Textarea 
+                    v-model="localTicket!.description"
+                    placeholder="Provide more technical details..."
+                    class="min-h-[140px] p-4 rounded-[10px] bg-slate-50 border-transparent focus-visible:ring-primary/20 text-sm font-medium leading-relaxed text-slate-700 transition-all resize-none"
+                  />
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-1">
+                  <div class="space-y-3">
+                    <Label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Status Control</Label>
+                    <Select v-model="selectedStatus">
+                      <SelectTrigger class="h-10 rounded-[10px] bg-slate-50 border-transparent font-bold">
+                        <SelectValue placeholder="Select Status" />
+                      </SelectTrigger>
+                      <SelectContent class="rounded-[10px] border-slate-100 shadow-xl" align="start">
+                        <SelectItem value="Open">Open</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Resolved">Resolved</SelectItem>
+                        <SelectItem value="Closed">Closed</SelectItem>
+                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div class="space-y-3">
+                    <Label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Urgency Level</Label>
+                    <Select v-model="selectedPriority">
+                      <SelectTrigger :class="['h-10 rounded-[10px] border-transparent font-bold transition-all', getPriorityColor(selectedPriority)]">
+                        <SelectValue placeholder="Select Priority" />
+                      </SelectTrigger>
+                      <SelectContent class="rounded-[10px] border-slate-100 shadow-xl" align="start">
+                        <SelectItem value="Low">
+                          <span class="flex items-center gap-2 text-blue-600 font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                            Low Urgency
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="Medium">
+                          <span class="flex items-center gap-2 text-amber-600 font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            Medium Urgency
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="High">
+                          <span class="flex items-center gap-2 text-orange-600 font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                            High Urgency
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="Critical">
+                          <span class="flex items-center gap-2 text-rose-600 font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            Critical Emergency
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div class="space-y-3">
+                    <Label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">IT Assignee</Label>
+                    <Select v-model="selectedAssignee">
+                      <SelectTrigger class="h-10 rounded-[10px] bg-slate-50 border-transparent font-bold">
+                        <SelectValue placeholder="Assign Technician" />
+                      </SelectTrigger>
+                      <SelectContent class="rounded-[10px] border-slate-100 shadow-xl" align="start">
+                        <SelectItem value="unassigned">Waiting for Assignment</SelectItem>
+                        <SelectItem v-for="user in availableAssignees" :key="user.id" :value="user.id">
+                          {{ user.displayName || user.username }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service History (Audit Logs) -->
+            <div class="space-y-4 pt-2">
+              <div class="flex items-center justify-between px-2">
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                  <History class="w-4 h-4" />
+                  System Audit & Activity Logs
+                </h4>
+                <span class="text-xs font-black text-slate-400 uppercase tracking-widest">{{ mergedTimeline.length }} Events</span>
+              </div>
+
               <!-- Comment Input -->
-              <div
-                v-if="isEditable"
-                class="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all"
-              >
+              <div v-if="isEditable" class="bg-white rounded-[10px] border border-slate-200/60 p-5 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                 <div class="flex gap-4">
-                  <Avatar
-                    class="w-10 h-10 border-2 border-white shadow-sm ring-1 ring-slate-100 shrink-0"
-                  >
+                  <Avatar class="w-10 h-10 border-2 border-white shadow-sm ring-1 ring-slate-100 shrink-0">
                     <AvatarImage :src="getAvatarUrl(authStore.user?.avatar)" />
-                    <AvatarFallback class="bg-primary/5 text-primary text-xs"
-                      >ME</AvatarFallback
-                    >
+                    <AvatarFallback class="bg-primary/5 text-primary text-xs">ME</AvatarFallback>
                   </Avatar>
                   <div class="flex-1">
                     <Textarea
                       placeholder="Add an internal note or progress update..."
                       v-model="comment"
-                      class="min-h-[60px] bg-transparent border-0 focus-visible:ring-0 resize-none text-sm font-bold p-0 shadow-none placeholder:text-slate-300"
+                      class="min-h-[50px] bg-transparent border-0 focus-visible:ring-0 resize-none text-sm font-bold p-0 shadow-none placeholder:text-slate-300"
                     />
-                    <div
-                      class="flex items-center justify-between mt-3 pt-3 border-t border-slate-50"
-                    >
-                      <span
-                        class="text-xs font-black text-slate-300 uppercase tracking-widest italic"
-                        >Confidential Internal Remark</span
-                      >
+                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-50">
+                      <span class="text-[0.6rem] font-black text-slate-300 uppercase tracking-widest italic">Confidential Internal Remark</span>
                       <Button
                         @click="handlePostComment"
                         :disabled="!comment.trim() || loading"
                         size="sm"
-                        class="bg-slate-900 hover:bg-black text-white px-4 h-7 text-xs font-black uppercase tracking-widest rounded-lg shadow-md transition-all active:scale-95"
+                        class="bg-slate-900 hover:bg-black text-white px-5 h-8 text-[0.65rem] font-black uppercase tracking-widest rounded-[10px] shadow-md transition-all active:scale-95"
                       >
                         Post Update
                       </Button>
@@ -765,81 +957,62 @@ const handlePrint = async () => {
                 </div>
               </div>
 
-              <!-- History Items -->
-              <div
-                v-for="item in mergedTimeline"
-                :key="item.id"
-                class="relative group"
-              >
-                <div
-                  class="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm hover:shadow-md transition-all duration-300"
-                >
-                  <div class="flex gap-4">
-                    <div class="shrink-0">
-                      <Avatar
-                        class="w-10 h-10 border-2 border-white shadow-sm ring-1 ring-slate-100"
-                      >
-                        <AvatarImage :src="getAvatarUrl(item.user?.avatar)" />
-                        <AvatarFallback
-                          class="bg-slate-100 text-slate-400 text-xs"
-                          >{{ userInitials(item.user) }}</AvatarFallback
-                        >
-                      </Avatar>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between mb-1.5">
-                        <span
-                          class="text-xs font-black text-slate-800 uppercase tracking-wide truncate pr-4"
-                          >{{ item.user?.displayName || "System" }}</span
-                        >
-                        <span
-                          class="text-xs font-bold text-slate-400 uppercase tracking-widest shrink-0"
-                          >{{ formatDate(item.createdAt) }}</span
-                        >
+              <!-- History Timeline -->
+              <div class="space-y-3">
+                <div v-for="item in mergedTimeline" :key="item.id" class="relative group">
+                  <div class="bg-white rounded-[10px] border border-slate-200/60 p-4 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div class="flex gap-4">
+                      <div class="shrink-0">
+                        <Avatar class="w-10 h-10 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                          <AvatarImage :src="getAvatarUrl(item.user?.avatar)" />
+                          <AvatarFallback class="bg-slate-100 text-slate-400 text-xs">{{ userInitials(item.user) }}</AvatarFallback>
+                        </Avatar>
                       </div>
-
-                      <div
-                        v-if="item.timelineType === 'comment'"
-                        class="text-sm font-medium text-slate-600 leading-relaxed bg-slate-50/80 p-3 rounded-xl border border-slate-100/50 italic"
-                      >
-                        "{{ item.content }}"
-                      </div>
-
-                      <div
-                        v-else
-                        class="flex flex-wrap items-center gap-1.5 text-xs font-bold text-slate-500 py-1 uppercase"
-                      >
-                        <div
-                          class="w-2 h-2 rounded-full bg-slate-300 mr-1"
-                        ></div>
-                        <span v-if="item.type === 'STATUS_CHANGE'">
-                          From
-                          <span
-                            class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600"
-                            >{{ item.oldValue }}</span
-                          >
-                          »
-                          <span
-                            class="bg-primary/10 text-primary px-1.5 py-0.5 rounded"
-                            >{{ item.newValue }}</span
-                          >
-                        </span>
-                        <span v-else-if="item.type === 'ASSIGNMENT'">
-                          Assigned to
-                          <span class="text-primary">{{
-                            item.newValue || "Unassigned"
-                          }}</span>
-                        </span>
-                        <span v-else-if="item.type === 'TICKET_CREATED'"
-                          >Case Initialized</span
-                        >
-                        <span v-else>{{ item.content || item.type }}</span>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between mb-1">
+                          <span class="text-xs font-black text-slate-800 uppercase tracking-wide truncate pr-4">{{ item.user?.displayName || "System" }}</span>
+                          <span class="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest shrink-0">{{ formatDate(item.createdAt) }}</span>
+                        </div>
+                        <div v-if="item.timelineType === 'comment'" class="text-sm font-medium text-slate-600 leading-relaxed bg-slate-50/80 p-3 rounded-[10px] border border-slate-100/50 italic">
+                          "{{ item.content }}"
+                        </div>
+                        <div v-else class="flex flex-wrap items-center gap-1.5 text-[0.6rem] font-bold text-slate-500 py-1 uppercase">
+                          <div class="w-1.5 h-1.5 rounded-full bg-slate-300 mr-1"></div>
+                          <span v-if="item.type === 'STATUS_CHANGE'">
+                            From <span class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">{{ item.oldValue }}</span>
+                            » <span class="bg-primary/10 text-primary px-1.5 py-0.5 rounded">{{ item.newValue }}</span>
+                          </span>
+                          <span v-else-if="item.type === 'ASSIGNMENT'">
+                            Assigned to <span class="text-primary">{{ item.newValue || "Unassigned" }}</span>
+                          </span>
+                          <span v-else-if="item.type === 'TICKET_CREATED'">Case Initialized</span>
+                          <span v-else>{{ item.content || item.type }}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Paper Mode: Document View -->
+        <div v-if="viewMode === 'paper-only'" class="flex-1 overflow-y-auto p-6 bg-slate-100 flex flex-col items-center pt-8 pb-12 scrollbar-hide">
+          <div class="relative scale-[0.9] origin-top md:scale-100">
+            <JobOrderA4
+              ref="jobOrderRef"
+              :ticket="localTicket"
+              :isEditable="false"
+              :canManage="false"
+              :availableAssignees="availableAssignees"
+              :resolutionDuration="resolutionDuration"
+              :getStatusColor="getStatusColor"
+              @update:ticket="(val) => (localTicket = val)"
+              @update:assignee="(val) => (selectedAssignee = val)"
+              @update:priority="(val) => (selectedPriority = val)"
+              @update:status="(val) => (selectedStatus = val)"
+            />
           </div>
         </div>
       </div>
@@ -856,7 +1029,7 @@ const handlePrint = async () => {
               class="flex flex-col items-center gap-1 group"
             >
               <div
-                class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-100 transition-all shadow-sm"
+                class="w-8 h-8 rounded-[10px] bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-100 transition-all shadow-sm"
               >
                 <FileText class="w-4 h-4" />
               </div>
@@ -870,7 +1043,7 @@ const handlePrint = async () => {
               class="flex flex-col items-center gap-1 group"
             >
               <div
-                class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-slate-100 transition-all shadow-sm"
+                class="w-8 h-8 rounded-[10px] bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-slate-100 transition-all shadow-sm"
               >
                 <Printer class="w-4 h-4" />
               </div>
@@ -879,40 +1052,21 @@ const handlePrint = async () => {
                 >Print</span
               >
             </button>
-            <button
-              @click="saveChanges()"
-              :disabled="loading"
-              class="flex flex-col items-center gap-1 group"
-            >
-              <div
-                class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 transition-all shadow-sm"
-              >
-                <ArrowUpDown class="w-4 h-4" />
-              </div>
-              <span
-                class="text-xs font-black uppercase tracking-widest text-emerald-600"
-                >{{ loading ? "Saving..." : "Update Status" }}</span
-              >
-            </button>
           </div>
 
           <div class="w-px h-10 bg-slate-100 hidden sm:block"></div>
 
-          <div class="flex gap-4">
+          <div v-if="isITDepartment || isAdmin" class="flex gap-4">
             <button
-              @click="isOpen = false"
-              class="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-all uppercase tracking-widest"
-            >
-              History
-            </button>
-            <button
-              @click="isOpen = false"
-              class="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-all uppercase tracking-widest"
+              @click="isEditingDates = !isEditingDates"
+              :class="[
+                'text-xs font-bold transition-all uppercase tracking-widest',
+                isEditingDates ? 'text-primary' : 'text-slate-400 hover:text-indigo-600'
+              ]"
             >
               Reschedule
             </button>
             <button
-              v-if="canManage"
               @click="handleDelete"
               class="text-xs font-bold text-rose-400 hover:text-rose-600 transition-all uppercase tracking-widest"
             >

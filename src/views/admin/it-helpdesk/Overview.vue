@@ -5,25 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { itTicketsApi, type ITTicket } from "@/services/it-tickets";
 import { socketService } from "@/services/socket";
 import {
-    endOfMonth,
-    format,
-    isAfter,
-    isBefore,
-    startOfMonth,
-    subMonths,
+  endOfMonth,
+  format,
+  isAfter,
+  isBefore,
+  startOfMonth,
+  subMonths,
 } from "date-fns";
 import {
-    Activity,
-    ArrowDownRight,
-    ArrowUpRight,
-    CheckCircle2,
-    ClipboardList,
-    Clock,
-    Star,
-    Target,
-    Ticket,
-    User,
-    Zap,
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
+  CheckCircle2,
+  ClipboardList,
+  Clock,
+  Star,
+  Target,
+  Ticket,
+  User,
+  Zap,
 } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -64,6 +64,7 @@ const loadTickets = async () => {
 
 onMounted(() => {
   loadTickets();
+  socketService.joinRoom('it-helpdesk');
   socketService.on("ticket:created", loadTickets);
   socketService.on("ticket:updated", loadTickets);
   socketService.on("ticket:deleted", loadTickets);
@@ -129,7 +130,7 @@ const ticketStats = computed(() => {
       ).getTime() - new Date(t.createdAt).getTime();
     currentTotalMs += diff;
     if (diff < currentMinMs) currentMinMs = diff;
-    if (diff <= 3600000) currentFcrCount++; // <= 1 hour
+    if (diff <= 10800000) currentFcrCount++; // <= 3 hours (3 * 3600000)
   });
 
   const currentAvgMs = currentResolved.length
@@ -170,7 +171,7 @@ const ticketStats = computed(() => {
       ).getTime() - new Date(t.createdAt).getTime();
     lastTotalMs += diff;
     if (diff < lastMinMs) lastMinMs = diff;
-    if (diff <= 3600000) lastFcrCount++;
+    if (diff <= 10800000) lastFcrCount++; // <= 3 hours
   });
 
   const lastAvgMs = lastResolved.length ? lastTotalMs / lastResolved.length : 0;
@@ -255,15 +256,15 @@ const replyTimeStats = computed(() => {
   const hrs = (t: ITTicket) =>
     (new Date(t.resolvedAt!).getTime() - new Date(t.createdAt).getTime()) /
     3600000;
-  const lt1h = resolved.filter((t) => hrs(t) <= 1).length;
-  const h1to8 = resolved.filter((t) => hrs(t) > 1 && hrs(t) <= 8).length;
+  const lt3h = resolved.filter((t) => hrs(t) <= 3).length;
+  const h3to8 = resolved.filter((t) => hrs(t) > 3 && hrs(t) <= 8).length;
   const h8to24 = resolved.filter((t) => hrs(t) > 8 && hrs(t) <= 24).length;
   const gt24h = resolved.filter((t) => hrs(t) > 24).length;
   const noReply = tickets.value.filter((t: ITTicket) => !t.resolvedAt).length;
   const total = tickets.value.length || 1;
   return {
-    lt1h,
-    h1to8,
+    lt3h,
+    h3to8,
     h8to24,
     gt24h,
     noReply,
@@ -273,8 +274,8 @@ const replyTimeStats = computed(() => {
 });
 
 const replyTimeSlices = computed(() => {
-  const { lt1h, h1to8, h8to24, gt24h, noReply } = replyTimeStats.value;
-  // const totalResolved = lt1h + h1to8 + h8to24 + gt24h; // Not used directly in new logic
+  const { lt3h, h3to8, h8to24, gt24h, noReply } = replyTimeStats.value;
+  // const totalResolved = lt3h + h3to8 + h8to24 + gt24h; // Not used directly in new logic
 
   const createSlice = (label: string, color: string, count: number) => ({
     label,
@@ -282,15 +283,15 @@ const replyTimeSlices = computed(() => {
     count,
   });
   const data = [
-    createSlice("0-1 Hours", "#0d9488", lt1h),
-    createSlice("1-8 Hours", "#f59e0b", h1to8),
+    createSlice("0-3 Hours", "#0d9488", lt3h),
+    createSlice("3-8 Hours", "#f59e0b", h3to8),
     createSlice("8-24 Hours", "#a855f7", h8to24),
     createSlice("> 24 Hours", "#6366f1", gt24h),
     createSlice("No Replies", "#ef4444", noReply),
   ];
 
   // Calculate total for chart slices only (excluding No Replies)
-  const totalForSlices = lt1h + h1to8 + h8to24 + gt24h;
+  const totalForSlices = lt3h + h3to8 + h8to24 + gt24h;
 
   let cumulativeAngle = 0;
   return data.map((slice) => {
@@ -342,7 +343,7 @@ const replyTimeSlices = computed(() => {
 
       // Text Position (Midpoint at middle radius)
       const midAngle = startAngle + sliceAngle / 2;
-      const rText = 40; // (50 + 30) / 2
+      const rText = 38; // Adjusted for better balance
       // Correct for -90deg rotation of SVG
       lx = 50 + rText * Math.cos((Math.PI * (midAngle - 90)) / 180);
       ly = 50 + rText * Math.sin((Math.PI * (midAngle - 90)) / 180);
@@ -913,8 +914,8 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
                 <div
                   v-for="(slice, i) in replyTimeSlices"
                   :key="i"
-                  v-show="slice.percent >= 5"
-                  class="absolute flex items-center justify-center text-xs font-black text-white drop-shadow-md transform -translate-x-1/2 -translate-y-1/2"
+                  v-show="slice.percent >= 3"
+                  class="absolute flex items-center justify-center text-[11px] font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300"
                   :style="{ left: slice.lx + '%', top: slice.ly + '%' }"
                 >
                   {{ slice.percent }}%
@@ -922,39 +923,39 @@ const formatFullTime = (d: string) => format(new Date(d), "dd MMM HH:mm");
               </div>
               <!-- Center Text -->
               <div
-                class="absolute inset-8 rounded-full bg-card shadow-inner flex flex-col items-center justify-center pointer-events-none"
+                class="absolute inset-[32%] rounded-full bg-card shadow-inner flex flex-col items-center justify-center pointer-events-none"
               >
                 <span
-                  class="text-4xl font-black tracking-tighter text-foreground"
+                  class="text-4xl font-black tracking-tighter text-foreground leading-none"
                   >{{ replyTimeStats.resolvedCount }}</span
                 >
                 <span
-                  class="text-xs font-bold uppercase tracking-widest text-muted-foreground/60"
+                  class="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50 mt-1"
                   >Tickets</span
                 >
               </div>
             </div>
 
             <!-- Legend -->
-            <div class="flex-1 space-y-3 min-w-[120px]">
+            <div class="flex-1 space-y-2 min-w-[180px]">
               <div
                 v-for="(item, i) in replyTimeSlices"
                 :key="i"
-                class="flex items-center gap-2"
+                class="grid grid-cols-[12px_1fr_24px_36px] items-center gap-2 group/item"
               >
                 <span
-                  class="w-3 h-3 rounded-sm shrink-0"
+                  class="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
                   :style="{ backgroundColor: item.color }"
                 ></span>
                 <span
-                  class="flex-1 text-sm font-bold text-foreground/80 capitalize"
+                  class="text-[0.8rem] font-bold text-slate-500/80 uppercase tracking-wide truncate"
                   >{{ item.label }}</span
                 >
-                <span class="text-sm font-black text-foreground">{{
+                <span class="text-[0.85rem] font-black text-slate-900 text-right tabular-nums">{{
                   item.count
                 }}</span>
                 <span
-                  class="text-xs font-bold text-muted-foreground/60 w-9 text-right"
+                  class="text-[0.75rem] font-black text-slate-400 text-right tabular-nums"
                 >
                   {{ item.percent }}%
                 </span>

@@ -20,7 +20,14 @@ class SocketService {
         }
 
         const apiUrl = import.meta.env.VITE_API_URL || 'https://app.ytrc.co.th';
-        const socketUrl = apiUrl.replace('/api', '');
+        // If VITE_API_URL is a relative path like '/api', replace will yield an empty
+        // string which causes the client to try connecting to an invalid host.
+        // Normalize to a usable origin: prefer absolute VITE_API_URL, otherwise
+        // fall back to the current page origin so the dev-server proxy can be used.
+        let socketUrl = apiUrl.replace('/api', '');
+        if (!socketUrl) {
+            socketUrl = window.location.origin;
+        }
 
         console.log('SocketService: Connecting to', socketUrl);
 
