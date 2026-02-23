@@ -462,14 +462,20 @@ onUnmounted(() => {
 
     <!-- New Ticket Modal -->
     <Dialog v-model:open="isTicketModalOpen">
-      <DialogContent class="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{{ t('services.itHelp.ticket.newTitle') }}</DialogTitle>
-          <DialogDescription>
+      <!-- Added [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden to hide scrollbar while keeping it scrollable -->
+      <DialogContent class="sm:max-w-[700px] max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-0 border-none rounded-[14px]">
+        <DialogHeader class="px-6 pt-6 pb-2 bg-gradient-to-r from-primary/5 to-transparent">
+          <DialogTitle class="text-xl font-black tracking-tight flex items-center gap-2">
+            <Plus class="w-5 h-5 text-primary" />
+            {{ t('services.itHelp.ticket.newTitle') }}
+          </DialogTitle>
+          <DialogDescription class="text-xs font-bold uppercase tracking-widest text-muted-foreground mt-1">
             {{ t('services.itHelp.ticket.subtitle') }}
           </DialogDescription>
         </DialogHeader>
-        <NewTicketForm @success="handleTicketSuccess" @cancel="isTicketModalOpen = false" />
+        <div class="px-6 pb-6">
+          <NewTicketForm @success="handleTicketSuccess" @cancel="isTicketModalOpen = false" />
+        </div>
       </DialogContent>
     </Dialog>
 

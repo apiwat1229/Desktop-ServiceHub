@@ -1166,6 +1166,8 @@
               "computer": "Computer / Laptop (เปิดไม่ติด, เครื่องช้า)",
               "printer": "Printer / Scanner (หมึกหมด, กระดาษติด)",
               "peripherals": "Peripherals (เมาส์, คีย์บอร์ด, จอภาพ)",
+              "mobile": "Mobile / Tablet (มือถือ, แท็บเล็ต)",
+              "ups": "UPS / Power Backup (เครื่องสำรองไฟ)",
               "infrastructure": "Server / Infrastructure (Admin เท่านั้น)"
             }
           },
@@ -1175,6 +1177,7 @@
               "wifi": "Wi-Fi (เชื่อมต่อไม่ได้, สัญญาณอ่อน)",
               "lan": "LAN / Cabling (สายขาด, พอร์ตเสีย)",
               "vpn": "VPN / Remote Access (เข้า Server ไม่ได้)",
+              "firewall": "Website Blocked / Firewall (เข้าเว็บไม่ได้, โดนบล็อก)",
               "internet": "Internet (ช้า, เข้าเว็บไม่ได้)"
             }
           },
@@ -1183,6 +1186,8 @@
             "subs": {
               "os": "OS Issues (Windows Update, จอดำ)",
               "office": "Microsoft Office / 365",
+              "design": "Design Software (AutoCAD, Adobe)",
+              "antivirus": "Antivirus / Security Alert (แจ้งเตือนไวรัส)",
               "license": "License / ขอลงโปรแกรมเพิ่ม"
             }
           },
@@ -1191,6 +1196,7 @@
             "subs": {
               "password": "Password Reset / บัญชีโดนล็อค",
               "user": "New User / Resignation (แจ้งพนักงานใหม่-ลาออก)",
+              "email": "Email (Outlook / Webmail รับส่งไม่ได้)",
               "permission": "File Server / ขอสิทธิ์เข้าถึงโฟลเดอร์"
             }
           },
@@ -1199,7 +1205,9 @@
             "subs": {
               "plc": "PLC / Machine Interface (เครื่องจักรไม่ส่งข้อมูล)",
               "scale": "Scale / Weighbridge (เครื่องชั่งมีปัญหา)",
-              "barcode": "Barcode / QR Scanner (สแกนเนอร์เสีย)"
+              "barcode": "Barcode / QR Scanner (สแกนเนอร์เสีย)",
+              "cctv": "CCTV / Security Camera (กล้องวงจรปิด)",
+              "industrialPrinter": "Industrial Printer (เครื่องพิมพ์ฉลากอุตสาหกรรม)"
             }
           },
           "internal": {
@@ -1213,8 +1221,12 @@
                   "feature": "ขอเพิ่มฟีเจอร์ใหม่ (Feature Request)"
                 }
               },
-              "erp": "ERP / Accounting System (บิลผิด, สต็อกไม่ตรง)"
+              "erp": "ERP / Accounting System (บิลผิด, สต็อกไม่ตรง)",
+              "hr": "HR / Payroll System (ระบบบุคคล, เงินเดือน)"
             }
+          },
+          "other": {
+            "label": "อื่นๆ (โปรดระบุรายละเอียด)"
           }
         }
       },

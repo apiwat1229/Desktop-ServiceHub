@@ -1187,6 +1187,8 @@
               "computer": "Computer / Laptop",
               "printer": "Printer / Scanner",
               "peripherals": "Peripherals (Mouse, Keyboard, Monitor)",
+              "mobile": "Mobile / Tablet",
+              "ups": "UPS / Power Backup",
               "infrastructure": "Server / Infrastructure"
             }
           },
@@ -1196,6 +1198,7 @@
               "wifi": "Wi-Fi",
               "lan": "LAN / Cabling",
               "vpn": "VPN / Remote Access",
+              "firewall": "Website Blocked / Firewall",
               "internet": "Internet"
             }
           },
@@ -1204,6 +1207,8 @@
             "subs": {
               "os": "OS Issues (Windows, Booting)",
               "office": "Microsoft Office / 365",
+              "design": "Design Software (AutoCAD, Adobe)",
+              "antivirus": "Antivirus / Security Alert",
               "license": "Software License / Installation"
             }
           },
@@ -1212,6 +1217,7 @@
             "subs": {
               "password": "Password Reset / Locked Account",
               "user": "New User / Resignation",
+              "email": "Email (Outlook / Webmail)",
               "permission": "File Server / Permissions"
             }
           },
@@ -1220,7 +1226,9 @@
             "subs": {
               "plc": "PLC / Machine Interface",
               "scale": "Scale / Weighbridge",
-              "barcode": "Barcode / QR Scanner"
+              "barcode": "Barcode / QR Scanner",
+              "cctv": "CCTV / Security Camera",
+              "industrialPrinter": "Industrial Printer"
             }
           },
           "internal": {
@@ -1234,8 +1242,12 @@
                   "feature": "Feature Request"
                 }
               },
-              "erp": "ERP / Accounting System"
+              "erp": "ERP / Accounting System",
+              "hr": "HR / Payroll System"
             }
+          },
+          "other": {
+            "label": "Other (Please specify)"
           }
         }
       },
