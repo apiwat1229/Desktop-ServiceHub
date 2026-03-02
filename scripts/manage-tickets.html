@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Test Tickets</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button.danger {
+            background: #ef4444;
+        }
+        button.danger:hover {
+            background: #dc2626;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        #log {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+        }
+        .log-success { color: #4ade80; }
+        .log-error { color: #f87171; }
+        .log-info { color: #60a5fa; }
+        .log-warning { color: #fbbf24; }
+        .controls {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #374151;
+            font-weight: 500;
+        }
+        input[type="number"] {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎫 Manage Test Tickets</h1>
+        <p class="subtitle">ลบ Tickets ทั้งหมดและสร้างข้อมูลทดสอบย้อนหลัง 1 เดือน</p>
+        
+        <div class="controls">
+            <label for="ticketCount">จำนวน Tickets ที่ต้องการสร้าง:</label>
+            <input type="number" id="ticketCount" value="30" min="1" max="100">
+        </div>
+
+        <button onclick="deleteAllTickets()" class="danger">🗑️ ลบ Tickets ทั้งหมด</button>
+        <button onclick="createTestTickets()">📝 สร้าง Test Tickets</button>
+        <button onclick="runFullProcess()">🚀 ลบและสร้างใหม่ทั้งหมด</button>
+        
+        <div id="log"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:2530/api';
+        
+        const categories = [
+            'Hardware > Computer > Slow Performance',
+            'Hardware > Computer > Not Booting',
+            'Hardware > Printer > Paper Jam',
+            'Hardware > Printer > Not Printing',
+            'Software > Application > Installation',
+            'Software > Application > Error',
+            'Software > Email > Cannot Send',
+            'Software > Email > Cannot Receive',
+            'Network > Internet > Slow Connection',
+            'Network > Internet > No Connection',
+            'Network > WiFi > Cannot Connect',
+            'Access > Account > Password Reset',
+            'Access > Account > Locked Account',
+            'Access > Permissions > File Access',
+        ];
+
+        const priorities = ['Low', 'Medium', 'High', 'Critical'];
+        const statuses = ['Open', 'In Progress', 'Pending', 'Resolved', 'Closed'];
+        const locations = ['Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Meeting Room A', 'Meeting Room B', 'Office 101', 'Office 102'];
+
+        const titles = [
+            'Computer running very slow',
+            'Cannot access printer',
+            'Email not working',
+            'Internet connection issues',
+            'Software installation needed',
+            'Password reset request',
+            'File access permission needed',
+            'System error message',
+            'Application crash',
+            'Network drive not accessible',
+            'VPN connection failed',
+            'Monitor display issues',
+            'Keyboard not working',
+            'Mouse not responding',
+            'Headset audio problems',
+        ];
+
+        const descriptions = [
+            'Need urgent assistance with this issue',
+            'This has been happening since yesterday',
+            'Multiple users are affected',
+            'Cannot complete my work without this',
+            'Please help as soon as possible',
+            'This is blocking my daily tasks',
+            'Tried restarting but still not working',
+            'Getting error messages repeatedly',
+            'Need this fixed before the meeting',
+            'Critical for project deadline',
+        ];
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function getToken() {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                log('❌ ไม่พบ Token - กรุณา Login ก่อน', 'error');
+                throw new Error('No authentication token found');
+            }
+            return token;
+        }
+
+        async function deleteAllTickets() {
+            try {
+                log('🗑️ กำลังลบ Tickets ทั้งหมด...', 'warning');
+                const token = getToken();
+                
+                const response = await fetch(`${API_BASE_URL}/it-tickets`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const tickets = await response.json();
+                log(`พบ ${tickets.length} tickets`, 'info');
+                
+                let deleted = 0;
+                for (const ticket of tickets) {
+                    try {
+                        const delResponse = await fetch(`${API_BASE_URL}/it-tickets/${ticket.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        
+                        if (delResponse.ok) {
+                            deleted++;
+                            log(`✅ ลบแล้ว: ${ticket.ticketNo} - ${ticket.title}`, 'success');
+                        }
+                    } catch (error) {
+                        log(`❌ ลบไม่สำเร็จ: ${ticket.ticketNo}`, 'error');
+                    }
+                }
+                
+                log(`✅ ลบ ${deleted} tickets สำเร็จ`, 'success');
+            } catch (error) {
+                log(`❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+            }
+        }
+
+        async function createTestTickets() {
+            try {
+                const count = parseInt(document.getElementById('ticketCount').value);
+                log(`📝 กำลังสร้าง ${count} test tickets...`, 'info');
+                const token = getToken();
+                
+                const now = new Date();
+                const oneMonthAgo = new Date(now);
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                
+                let created = 0;
+                const createdTickets = [];
+                
+                for (let i = 0; i < count; i++) {
+                    const randomTime = oneMonthAgo.getTime() + Math.random() * (now.getTime() - oneMonthAgo.getTime());
+                    const createdAt = new Date(randomTime);
+                    
+                    const ticket = {
+                        title: titles[Math.floor(Math.random() * titles.length)],
+                        description: descriptions[Math.floor(Math.random() * descriptions.length)],
+                        category: categories[Math.floor(Math.random() * categories.length)],
+                        priority: priorities[Math.floor(Math.random() * priorities.length)],
+                        location: locations[Math.floor(Math.random() * locations.length)],
+                        createdAt: createdAt.toISOString(),
+                    };
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/it-tickets`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(ticket)
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            createdTickets.push(data);
+                            created++;
+                            log(`✅ สร้างแล้ว #${created}: ${data.ticketNo} - ${ticket.title} (${createdAt.toLocaleDateString('th-TH')})`, 'success');
+                        }
+                        
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    } catch (error) {
+                        log(`❌ สร้างไม่สำเร็จ #${i + 1}`, 'error');
+                    }
+                }
+                
+                log(`✅ สร้าง ${created} tickets สำเร็จ`, 'success');
+                
+                // Update statuses
+                log('🔄 กำลังอัพเดทสถานะ...', 'info');
+                for (const ticket of createdTickets) {
+                    if (Math.random() > 0.3) {
+                        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                        try {
+                            await fetch(`${API_BASE_URL}/it-tickets/${ticket.id}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ status: randomStatus })
+                            });
+                            log(`✅ อัพเดท ${ticket.ticketNo} เป็น ${randomStatus}`, 'success');
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        } catch (error) {
+                            // Ignore update errors
+                        }
+                    }
+                }
+                
+                log('✅ เสร็จสิ้นทั้งหมด!', 'success');
+            } catch (error) {
+                log(`❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+            }
+        }
+
+        async function runFullProcess() {
+            await deleteAllTickets();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await createTestTickets();
+        }
+    </script>
+</body>
+</html>

@@ -1,33 +1,33 @@
 <script setup lang="ts">
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/ui/data-table/DataTable.vue';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { rolesApi } from '@/services/roles';
@@ -35,14 +35,14 @@ import { usersApi, type User } from '@/services/users';
 import type { RoleDto } from '@my-app/types';
 import type { ColumnDef } from '@tanstack/vue-table';
 import {
-  ArrowUpDown,
-  CheckCircle,
-  Edit,
-  Plus,
-  Search,
-  Trash2,
-  Unlock,
-  Users,
+    ArrowUpDown,
+    CheckCircle,
+    Edit,
+    Plus,
+    Search,
+    Trash2,
+    Unlock,
+    Users,
 } from 'lucide-vue-next';
 import { computed, h, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

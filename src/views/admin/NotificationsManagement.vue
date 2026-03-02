@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -16,28 +16,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import DataTable from '@/components/ui/data-table/DataTable.vue';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import MultiSelect from '@/components/ui/multi-select/MultiSelect.vue';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,33 +46,33 @@ import { notificationsApi } from '@/services/notifications';
 import { rolesApi } from '@/services/roles';
 import { usersApi } from '@/services/users';
 import type {
-  BroadcastDto,
-  CreateBroadcastDto,
-  CreateNotificationGroupDto,
-  NotificationGroupDto,
-  RoleDto,
-  UpdateNotificationSettingDto,
-  UserDto,
+    BroadcastDto,
+    CreateBroadcastDto,
+    CreateNotificationGroupDto,
+    NotificationGroupDto,
+    RoleDto,
+    UpdateNotificationSettingDto,
+    UserDto,
 } from '@my-app/types';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { format } from 'date-fns';
 import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowLeft,
-  Bell,
-  Briefcase,
-  CheckCircle2,
-  Edit2,
-  Info,
-  Layers,
-  Lock,
-  MoreHorizontal,
-  Plus,
-  Settings,
-  Shield,
-  Trash2,
-  Users,
+    AlertCircle,
+    AlertTriangle,
+    ArrowLeft,
+    Bell,
+    Briefcase,
+    CheckCircle2,
+    Edit2,
+    Info,
+    Layers,
+    Lock,
+    MoreHorizontal,
+    Plus,
+    Settings,
+    Shield,
+    Trash2,
+    Users,
 } from 'lucide-vue-next';
 import { computed, h, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

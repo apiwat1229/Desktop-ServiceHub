@@ -15,7 +15,9 @@
     "android:sync": "npm run build:web && npx cap sync android",
     "android:build": "npm run android:sync && cd android && gradlew assembleDebug",
     "android:build:release": "npm run android:sync && cd android && gradlew assembleRelease",
-    "android:open": "npx cap open android"
+    "android:open": "npx cap open android",
+    "simulate:tickets": "npx tsx scripts/simulate-tickets-enhanced.ts",
+    "manage:tickets": "npx tsx scripts/manage-test-tickets.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.1",

@@ -22,7 +22,8 @@ import {
     Package,
     Plus,
     Ticket,
-    TrendingUp
+    TrendingUp,
+    Zap
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';

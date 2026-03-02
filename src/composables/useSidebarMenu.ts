@@ -2,7 +2,9 @@ import { usePermissions } from '@/composables/usePermissions';
 import {
     BarChart3,
     BookOpen,
+    Camera,
     ClipboardList,
+    Database,
     FileText,
     Headset,
     LayoutDashboard,
@@ -62,6 +64,9 @@ export function useSidebarMenu() {
                         { name: t('services.itHelp.tabs.kb'), path: '/admin/helpdesk/kb', icon: BookOpen },
                         { name: t('services.itHelp.tabs.stock'), path: '/admin/helpdesk/inventory', icon: Package },
                         { name: t('services.itHelp.tabs.assetRequests'), path: '/admin/helpdesk/asset-requests', icon: Monitor },
+                        { name: 'CCTV Management', path: '/admin/helpdesk/cctv', icon: Camera },
+                        { name: 'Backup Data', path: '/admin/helpdesk/backup', icon: Database },
+                        { name: 'Preventive Maintenance', path: '/admin/helpdesk/preventive-maintenance', icon: Wrench },
                         { name: t('services.itHelp.tabs.analytics'), path: '/admin/helpdesk/analytics', icon: BarChart3 },
                     ]
                 },

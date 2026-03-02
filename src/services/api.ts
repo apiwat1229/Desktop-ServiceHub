@@ -6,6 +6,12 @@ import { socketService } from './socket';
 let memoryToken: string | null = null;
 
 const getBaseUrl = () => {
+    // In development, use relative path to leverage Vite proxy
+    // In production, use the full URL
+    if (import.meta.env.DEV) {
+        return '/api';
+    }
+
     let url = import.meta.env.VITE_API_URL || 'https://app.ytrc.co.th';
     // Remove trailing slash if present
     if (url.endsWith('/')) {

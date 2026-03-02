@@ -3,50 +3,50 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
 } from '@/components/ui/command';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
+import { usePermissions } from '@/composables/usePermissions';
 import { cn } from '@/lib/utils';
 import { printerService } from '@/services/printer';
 import { PrinterDepartmentDto, PrinterUserMappingDto } from '@my-app/types';
 import {
-  Calendar,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsUpDown,
-  Database,
-  Edit2,
-  Plus,
-  Search,
-  Settings2,
-  Trash2,
-  Users,
+    Calendar,
+    Check,
+    ChevronLeft,
+    ChevronRight,
+    ChevronsUpDown,
+    Database,
+    Edit2,
+    Plus,
+    Search,
+    Settings2,
+    Trash2,
+    Users,
 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { usePermissions } from '@/composables/usePermissions';
 
 const { t } = useI18n();
 const { isAdmin } = usePermissions();

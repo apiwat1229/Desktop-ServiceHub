@@ -182,6 +182,50 @@ const routes = [
                                 { label: 'Analytics' }
                             ]
                         }
+                    },
+                    {
+                        path: 'manage-test-tickets',
+                        name: 'Manage Test Tickets',
+                        component: () => import('../views/admin/ManageTestTickets.vue'),
+                        meta: {
+                            breadcrumbs: [
+                                { label: 'IT Help Desk', to: '/admin/helpdesk' },
+                                { label: 'Manage Test Tickets' }
+                            ]
+                        }
+                    },
+                    {
+                        path: 'cctv',
+                        name: 'CCTV Management',
+                        component: () => import('../views/admin/it-helpdesk/CCTVManagement.vue'),
+                        meta: {
+                            breadcrumbs: [
+                                { label: 'IT Help Desk', to: '/admin/helpdesk' },
+                                { label: 'CCTV Management' }
+                            ]
+                        }
+                    },
+                    {
+                        path: 'backup',
+                        name: 'Backup Data Management',
+                        component: () => import('../views/admin/it-helpdesk/BackupDataManagement.vue'),
+                        meta: {
+                            breadcrumbs: [
+                                { label: 'IT Help Desk', to: '/admin/helpdesk' },
+                                { label: 'Backup Data' }
+                            ]
+                        }
+                    },
+                    {
+                        path: 'preventive-maintenance',
+                        name: 'Preventive Maintenance',
+                        component: () => import('../views/admin/it-helpdesk/PreventiveMaintenance.vue'),
+                        meta: {
+                            breadcrumbs: [
+                                { label: 'IT Help Desk', to: '/admin/helpdesk' },
+                                { label: 'Preventive Maintenance' }
+                            ]
+                        }
                     }
                 ]
             },

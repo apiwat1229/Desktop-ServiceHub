@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -15,27 +15,27 @@ import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 import DataTable from '@/components/ui/data-table/DataTable.vue';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getAvatarUrl } from '@/lib/utils';
@@ -44,16 +44,16 @@ import { usersApi, type User } from '@/services/users';
 import type { RoleDto, UpdateRoleDto } from '@my-app/types';
 import type { ColumnDef } from '@tanstack/vue-table';
 import {
-  Briefcase,
-  Edit2,
-  Layers,
-  Lock,
-  MoreHorizontal,
-  Plus,
-  Shield,
-  Trash2,
-  User as UserIcon,
-  Users,
+    Briefcase,
+    Edit2,
+    Layers,
+    Lock,
+    MoreHorizontal,
+    Plus,
+    Shield,
+    Trash2,
+    User as UserIcon,
+    Users,
 } from 'lucide-vue-next';
 import { computed, h, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

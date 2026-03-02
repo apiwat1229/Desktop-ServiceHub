@@ -1,11 +1,12 @@
 import vue from '@vitejs/plugin-vue'
 import path from 'node:path'
 import Components from 'unplugin-vue-components/vite'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import electron from 'vite-plugin-electron/simple'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
   const isWebOnly = process.env.ELECTRON_DISABLE === '1'
 
   const plugins: any[] = [
@@ -139,9 +140,10 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       allowedHosts: ['app.ytrc.co.th', 'localhost', '122.154.46.21'],
       // Proxy API and socket requests to backend during development.
-      // Uses VITE_API_URL if provided, otherwise defaults to local backend at http://localhost:3000
+      // Uses VITE_API_URL if provided, otherwise defaults to local backend at http://localhost:2530
       proxy: (() => {
-        const apiTarget = process.env.VITE_API_URL || 'http://localhost:3000';
+        const apiTarget = env.VITE_API_URL || 'http://localhost:2530';
+        console.log('[Vite] Proxy target:', apiTarget);
         return {
           '/api': {
             target: apiTarget,
