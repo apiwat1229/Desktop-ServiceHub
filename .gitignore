@@ -25,3 +25,7 @@ dist-ssr
 
 # Auto-generated
 components.d.ts
+
+# Build output
+release/
+dist-electron/
