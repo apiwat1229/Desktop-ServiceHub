@@ -5,27 +5,24 @@ import { socketService } from './socket';
 
 let memoryToken: string | null = null;
 
+const normalizeBaseUrl = (url: string) => {
+    return url.endsWith('/') ? url.slice(0, -1) : url;
+};
+
 const getBaseUrl = () => {
-    // In development, use relative path to leverage Vite proxy
-    // In production, use the full URL
-    if (import.meta.env.DEV) {
-        return '/api';
+    const runtimeUrl = storage.get('apiBaseUrl');
+    if (runtimeUrl && typeof runtimeUrl === 'string') {
+        return normalizeBaseUrl(runtimeUrl);
     }
 
-    let url = import.meta.env.VITE_API_URL || 'https://app.ytrc.co.th';
-    // Remove trailing slash if present
-    if (url.endsWith('/')) {
-        url = url.slice(0, -1);
+    const url = import.meta.env.VITE_API_URL;
+    if (url && typeof url === 'string') {
+        return normalizeBaseUrl(url);
     }
-    // Append /api if not already present
-    if (!url.endsWith('/api')) {
-        url += '/api';
-    }
-    return url;
+    return '/api';
 };
 
 const baseURL = getBaseUrl();
-console.log('[API] Initialized with Base URL:', baseURL);
 
 const api = axios.create({
     baseURL,
@@ -57,14 +54,18 @@ export const setAuthToken = (token: string | null) => {
     memoryToken = token;
     if (token) {
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        console.log('[API] Global Authorization header updated (Memory Sync)');
-        // Also trigger socket connection when token is set/updated
         socketService.connect();
     } else {
         delete api.defaults.headers.common['Authorization'];
-        console.log('[API] Global Authorization header removed');
         socketService.disconnect();
     }
+};
+
+export const setApiBaseUrl = (baseUrl: string) => {
+    const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+    storage.set('apiBaseUrl', normalizedBaseUrl);
+    api.defaults.baseURL = normalizedBaseUrl;
+    socketService.disconnect();
 };
 
 api.interceptors.response.use(

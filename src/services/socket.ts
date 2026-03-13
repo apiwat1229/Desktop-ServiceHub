@@ -19,62 +19,46 @@ class SocketService {
             return;
         }
 
-        const apiUrl = import.meta.env.VITE_API_URL || 'https://app.ytrc.co.th';
-        // If VITE_API_URL is a relative path like '/api', replace will yield an empty
-        // string which causes the client to try connecting to an invalid host.
-        // Normalize to a usable origin: prefer absolute VITE_API_URL, otherwise
-        // fall back to the current page origin so the dev-server proxy can be used.
-        let socketUrl = apiUrl.replace('/api', '');
-        if (!socketUrl) {
-            socketUrl = window.location.origin;
-        }
-
-        console.log('SocketService: Connecting to', socketUrl);
+        const apiUrl = (storage.get('apiBaseUrl') || import.meta.env.VITE_API_URL || '/api').toString();
+        const isProxyMode = apiUrl.startsWith('/');
+        const socketUrl = isProxyMode
+            ? window.location.origin
+            : apiUrl.replace(/\/?api\/v1$/, '').replace(/\/?api$/, '');
+        const socketPath = isProxyMode ? `${apiUrl}/socket.io/` : '/socket.io/';
 
         this.socket = io(socketUrl, {
             transports: ['websocket', 'polling'],
             autoConnect: true,
+            path: socketPath,
             auth: {
                 token: token
             }
         });
 
         this.socket.on('connect', () => {
-            console.log('SocketService: Connected:', this.socket?.id);
             this.isConnected = true;
 
-            // Join pending room if exists, otherwise join from authStore
             if (this.pendingRoomUserId) {
                 this.joinRoom(this.pendingRoomUserId);
                 this.pendingRoomUserId = null;
             } else if (authStore.user?.id) {
                 this.joinRoom(authStore.user.id);
-            } else {
-                console.log('SocketService: User ID not ready yet, waiting for joinRoom call.');
             }
         });
 
         this.socket.on('disconnect', () => {
-            console.log('SocketService: Disconnected');
             this.isConnected = false;
         });
 
         this.socket.on('connect_error', (err) => {
             console.error('SocketService: Connection error:', err);
         });
-
-        // Debug
-        this.socket.on('notification', (data) => {
-            console.log('SocketService: Received notification event:', data);
-        });
     }
 
     joinRoom(userId: string) {
         if (this.socket && this.isConnected) {
-            console.log(`SocketService: Joining room user:${userId}`);
             this.socket.emit('join', userId);
         } else {
-            console.log(`SocketService: Socket or connection not ready, buffering joinRoom for user:${userId}`);
             this.pendingRoomUserId = userId;
         }
     }
