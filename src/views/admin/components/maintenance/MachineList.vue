@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import DataTable from '@/components/ui/data-table/DataTable.vue';
 import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { confirm } from '@/composables/useConfirm';
 import { useMaintenance } from '@/composables/useMaintenance';
 import { cn } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/vue-table';
@@ -11,7 +12,6 @@ import { Edit2, Monitor, QrCode, Search, Settings, Trash2 } from 'lucide-vue-nex
 import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
-import { confirm } from '@/composables/useConfirm';
 import MachineQrModal from './MachineQrModal.vue';
 
 const { t } = useI18n();

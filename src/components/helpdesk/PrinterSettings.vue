@@ -27,6 +27,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { confirm } from '@/composables/useConfirm';
 import { usePermissions } from '@/composables/usePermissions';
 import { cn } from '@/lib/utils';
 import { printerService } from '@/services/printer';
@@ -47,7 +48,6 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { confirm } from '@/composables/useConfirm';
 
 const { t } = useI18n();
 const { isAdmin } = usePermissions();

@@ -1,48 +1,48 @@
 <script setup lang="ts">
 import { Calendar } from '@/components/ui/calendar';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { confirm } from '@/composables/useConfirm';
 import { cn } from '@/lib/utils';
 import { usersApi, type User } from '@/services/users';
 import { parseDate, type DateValue } from '@internationalized/date';
 import {
-  addDays,
-  differenceInCalendarDays,
-  eachDayOfInterval,
-  format,
-  isBefore,
-  isSameDay,
-  isWeekend,
-  max,
-  min,
-  parseISO,
-  startOfDay,
-  subDays,
+    addDays,
+    differenceInCalendarDays,
+    eachDayOfInterval,
+    format,
+    isBefore,
+    isSameDay,
+    isWeekend,
+    max,
+    min,
+    parseISO,
+    startOfDay,
+    subDays,
 } from 'date-fns';
 import { enGB, th } from 'date-fns/locale';
 import {
-  ArrowLeft,
-  Calendar as CalendarIcon,
-  Check,
-  ChevronsUpDown,
-  FolderPlus,
-  LayoutGrid,
-  Plus,
-  Save,
-  Trash2,
-  User as UserIcon,
-  X,
+    ArrowLeft,
+    Calendar as CalendarIcon,
+    Check,
+    ChevronsUpDown,
+    FolderPlus,
+    LayoutGrid,
+    Plus,
+    Save,
+    Trash2,
+    User as UserIcon,
+    X,
 } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { confirm } from '@/composables/useConfirm';
 
 // --- Types ---
 interface Project {

@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { confirmState, confirmAccept, confirmCancel } from '@/composables/useConfirm'
+import { confirmAccept, confirmCancel, confirmState } from '@/composables/useConfirm';
 </script>
 
 <style scoped>
