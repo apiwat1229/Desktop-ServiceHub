@@ -11,6 +11,7 @@ import { AlertCircle, RefreshCw } from 'lucide-vue-next';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import GlobalBackground from './components/layout/GlobalBackground.vue';
+import ConfirmModal from '@/components/ui/ConfirmModal.vue';
 
 useThemeStore();
 const router = useRouter();
@@ -134,6 +135,8 @@ onUnmounted(() => {
       <router-view v-else />
     </div>
   </div>
+
+  <ConfirmModal />
 
   <Toaster
     position="top-center"

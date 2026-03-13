@@ -11,6 +11,7 @@ import { Edit2, Monitor, QrCode, Search, Settings, Trash2 } from 'lucide-vue-nex
 import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
+import { confirm } from '@/composables/useConfirm';
 import MachineQrModal from './MachineQrModal.vue';
 
 const { t } = useI18n();
@@ -58,8 +59,8 @@ const filteredMachines = computed(() => {
   );
 });
 
-const handleDeleteMachine = (id: string) => {
-  if (confirm(t('services.myMachine.messages.confirmDeleteMachine'))) {
+const handleDeleteMachine = async (id: string) => {
+  if (await confirm(t('services.myMachine.messages.confirmDeleteMachine'))) {
     deleteMachine(id);
     toast.success(t('services.myMachine.messages.machineRemoved'));
   }

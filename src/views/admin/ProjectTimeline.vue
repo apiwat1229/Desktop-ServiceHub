@@ -42,6 +42,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { confirm } from '@/composables/useConfirm';
 
 // --- Types ---
 interface Project {
@@ -300,9 +301,9 @@ const handleBackToProjects = () => {
   viewMode.value = 'list';
 };
 
-const handleDeleteProject = (id: number) => {
+const handleDeleteProject = async (id: number) => {
   if (
-    confirm('Are you sure you want to delete this project? All tasks within it will be deleted.')
+    await confirm('Are you sure you want to delete this project? All tasks within it will be deleted.')
   ) {
     projects.value = projects.value.filter((p) => p.id !== id);
     allTasks.value = allTasks.value.filter((t) => t.projectId !== id);
@@ -389,8 +390,8 @@ const handleSaveTask = () => {
   handleCloseTaskModal();
 };
 
-const handleDeleteTask = (id: number) => {
-  if (confirm('Are you sure you want to delete this task?')) {
+const handleDeleteTask = async (id: number) => {
+  if (await confirm('Are you sure you want to delete this task?')) {
     allTasks.value = allTasks.value.filter((t) => t.id !== id);
     saveData();
   }

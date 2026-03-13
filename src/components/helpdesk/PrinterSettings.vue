@@ -47,6 +47,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import { confirm } from '@/composables/useConfirm';
 
 const { t } = useI18n();
 const { isAdmin } = usePermissions();
@@ -158,7 +159,7 @@ const saveDepartment = async () => {
 };
 
 const deleteDepartment = async (id: string) => {
-  if (!confirm(t('services.admin.users.deleteConfirm') || 'Are you sure?')) return;
+  if (!(await confirm(t('services.admin.users.deleteConfirm') || 'Are you sure?'))) return;
   try {
     await printerService.deleteDepartment(id);
     loadData();
@@ -217,7 +218,7 @@ const saveManualMapping = async () => {
 };
 
 const deleteMapping = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this mapping?')) return;
+  if (!(await confirm('Are you sure you want to delete this mapping?'))) return;
   try {
     await printerService.deleteMapping(id);
 
